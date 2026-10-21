@@ -3,7 +3,7 @@ require "rails_helper"
 # Scope S01/S03: a task belongs to a project; its subteam and team come from that project.
 RSpec.describe "Task projects", type: :request do
      def task_params(project, overrides = {})
-          { title: "Fit wing spar", due_date: "2026-10-20", estimated_hours: "2", project_id: project.id }.merge(overrides)
+          { title: "Fit wing spar", start_date: "2026-10-01", due_date: "2026-10-20", estimated_hours: "2", project_id: project.id }.merge(overrides)
      end
 
      it "fills in the task's subteam and team from the chosen project, ignoring other values" do

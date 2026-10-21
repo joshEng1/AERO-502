@@ -11,6 +11,7 @@ RSpec.describe "KAN-7, KAN-9, and KAN-12 delivered access and status", type: :re
                title: "Unassigned wind tunnel calibration",
                description: "Calibrate the tunnel before testing.",
                estimated_hours: 2,
+               start_date: Date.new(2026, 10, 1),
                due_date: Date.new(2026, 10, 20),
                status: :backlog,
                project: projects(:aero),

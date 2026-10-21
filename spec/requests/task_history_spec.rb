@@ -28,7 +28,7 @@ RSpec.describe "Task history", type: :request do
      it "records assignments made when a task is created" do
           sign_in(users(:officer))
           post tasks_path, params: { task: {
-               title: "New task", due_date: "2026-10-20", estimated_hours: "1", project_id: projects(:aero).id,
+               title: "New task", start_date: "2026-10-01", due_date: "2026-10-20", estimated_hours: "1", project_id: projects(:aero).id,
                team_id: teams(:aerodynamics).id, assignee_ids: [ users(:member).id ]
           } }
 

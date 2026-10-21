@@ -37,6 +37,7 @@ RSpec.describe "Recording actual hours", type: :request do
 
      it "limits a member's total for one worked date to 24 hours across all tasks" do
           other_task = Task.create!(title: "Second task", estimated_hours: 2, due_date: Date.new(2026, 10, 20),
+                                    start_date: Date.new(2026, 10, 1),
                                     project: projects(:aero), team: teams(:aerodynamics), creator: users(:officer))
           other_task.assignees << member
           TimeEntry.create!(task: other_task, user: member, hours: 20, worked_on: Date.new(2026, 9, 30))
