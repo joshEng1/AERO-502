@@ -54,7 +54,7 @@ RSpec.describe "Searchable member filter", type: :system do
 
           click_link "Timeline", exact: true
           expect(page).to have_field("Member", with: "Meeting Member 70")
-          click_button "Clear member filter"
+          find('button[aria-label="Clear member filter"]').click
           expect(page).to have_field("Member", with: "")
           click_button "Apply", exact: true
           expect(page).to have_link("Wing load test")
