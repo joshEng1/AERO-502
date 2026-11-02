@@ -91,7 +91,14 @@ export function initializeMemberSelectors(root = document) {
       // Opening near the bottom of the page must reveal the bounded list.
       list.scrollIntoView({block: "nearest"});
     };
-    input.addEventListener("focus", open);
+    // Scrolling during pointer-down moves the input before the click finishes.
+    // Pointer users open on click; keyboard users still open as soon as they focus.
+    let pointerDown = false;
+    input.addEventListener("pointerdown", () => { pointerDown = true; });
+    input.addEventListener("pointerup", () => { pointerDown = false; });
+    input.addEventListener("pointercancel", () => { pointerDown = false; });
+    input.addEventListener("blur", () => { pointerDown = false; });
+    input.addEventListener("focus", () => { if (!pointerDown) open(); });
     input.addEventListener("click", open);
     input.addEventListener("input", open);
     input.addEventListener("keydown", event => {

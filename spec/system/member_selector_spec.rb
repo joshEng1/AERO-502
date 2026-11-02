@@ -24,6 +24,19 @@ RSpec.describe "Meeting task assignment", type: :system do
           search = find("#task_member_search")
           # Exercise opening the selector at the bottom edge of the viewport.
           page.execute_script('arguments[0].scrollIntoView({block: "end"})', search)
+          search_top = page.evaluate_script('document.getElementById("task_member_search").getBoundingClientRect().top')
+          begin
+               page.driver.browser.action.move_to(search.native).click_and_hold.perform
+               # Moving the field during pointer-down can send the click elsewhere.
+               expect(page).to have_css("#task_member_search:focus")
+               expect(page.evaluate_script('document.getElementById("task_member_search").getBoundingClientRect().top')).to be_within(1).of(search_top)
+          ensure
+               page.driver.browser.action.release.perform
+          end
+          expect(page).to have_css('#task_member_search[aria-expanded="true"]')
+          find("#task_estimated_hours").click
+          expect(page).to have_css('#task_member_search[aria-expanded="false"]')
+          page.execute_script('arguments[0].scrollIntoView({block: "end"})', search)
           search.click
           expect(page).to have_css('#task_member_search[aria-expanded="true"]')
           expect(page).to have_css('#member-options:not([hidden])', visible: true)
@@ -34,6 +47,13 @@ RSpec.describe "Meeting task assignment", type: :system do
           expect(page.evaluate_script('document.getElementById("member-options").getBoundingClientRect().height')).to be <= 300
           expect(page).not_to have_css('input[type="checkbox"]')
           expect(page).not_to have_css('#member-options [role="option"]', text: users(:other_member).name, visible: :all)
+          expect(page).not_to have_css(".member-chip")
+          search.send_keys(:tab)
+          expect(page).to have_css("#task_primary_contact_id:focus")
+          expect(page).to have_css('#task_member_search[aria-expanded="false"]')
+          find("#task_primary_contact_id").send_keys([ :shift, :tab ])
+          expect(page).to have_css('#task_member_search:focus[aria-expanded="true"]')
+          expect(page).to have_css('#member-options:not([hidden])', visible: true)
           search.fill_in(with: "meeting MEMBER 70")
           search.send_keys(:arrow_down, :enter)
           expect(page).to have_css('button[aria-label="Remove Meeting Member 70"]')
@@ -62,6 +82,7 @@ RSpec.describe "Meeting task assignment", type: :system do
           expect(page).to have_css('button[aria-label="Remove Meeting Member 80"]')
           page.driver.browser.manage.window.resize_to(390, 844)
           find("#task_member_search").click
+          expect(page).to have_css('#task_member_search:focus[aria-expanded="true"]')
           page.execute_script('document.querySelector("[data-member-selector]").scrollIntoView({block: "start"})')
           expect(page.evaluate_script("document.documentElement.scrollWidth <= window.innerWidth + 1")).to be(true)
           page.save_screenshot(Rails.root.join("tmp/screenshots/member_selector.png"))
