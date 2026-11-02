@@ -12,6 +12,11 @@
   <% if @user.errors.any? %>
     <div class="error-summary" role="alert">
       <h2><%= pluralize(@user.errors.count, "error") %> prevented this change from being saved</h2>
+      <ul>
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
     </div>
   <% end %>
 

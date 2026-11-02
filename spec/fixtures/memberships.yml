@@ -1,0 +1,12 @@
+officer:
+  user: officer
+  subteam: wing
+other_officer:
+  user: other_officer
+  subteam: airframe
+member:
+  user: member
+  subteam: wing
+other_member:
+  user: other_member
+  subteam: airframe

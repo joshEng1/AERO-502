@@ -1,50 +1,43 @@
 require "rails_helper"
 
-# KAN-20: leaders see who assigned work and changed its status.
 RSpec.describe "Task history", type: :request do
      let(:task) { tasks(:wing_test) }
-     let(:second_member) do
-          User.create!(name: "Sam Second", email: "sam@example.test", password: "password",
-                       role: :member, team: teams(:aerodynamics))
-     end
+     let(:second_member) { User.create!(name: "Sam Second", email: "sam@example.test", role: :member, subteam: subteams(:wing)) }
 
      def history_items
           response.parsed_body.css("[data-history] li").map { |item| item.text.squish }
      end
 
-     it "records assignments and removals with the actor and the affected member" do
+     it "ends assignment periods with the remover and starts a new period on reassignment" do
           sign_in(users(:officer))
+          original = task.active_assignments.first
+          patch task_path(task), params: { task: { assignee_ids: [ second_member.id ] } }
+          expect(original.reload).to have_attributes(assigned_by: users(:officer), unassigned_by: users(:officer))
+          expect(original.unassigned_at).to be_present
+          expect(task.active_assignments.first.user).to eq(second_member)
+          patch task_path(task), params: { task: { assignee_ids: [ users(:member).id, second_member.id ] } }
+          expect(task.task_assignments.where(user: users(:member)).count).to eq(2)
+          expect(task.active_assignments.where(user: users(:member)).count).to eq(1)
+          expect(task.time_entries.sum(:hours)).to eq(2.5)
+     end
 
+     it "records the initial status and creator when a task is created in any column" do
+          sign_in(users(:officer))
+          post tasks_path, params: { task: { title: "Created complete", project_id: projects(:aero).id,
+               due_date: Date.current, estimated_hours: 1, status: "completed", assignee_ids: [ users(:member).id ] } }
+          created = Task.order(:id).last
+          expect(created.status_changes.first).to have_attributes(actor: users(:officer), to_status: "completed", created_at: created.created_at)
+          expect(created.active_assignments.first.assigned_by).to eq(users(:officer))
+     end
+
+     it "does not add periods or status changes for unchanged fields" do
+          sign_in(users(:officer))
           expect do
-               patch task_path(task), params: { task: { assignee_ids: [ second_member.id ] } }
-          end.to change(TaskEvent, :count).by(2)
-
-          events = TaskEvent.where(task: task).order(:id).last(2)
-          expect(events.map { |event| [ event.action, event.subject_user, event.actor ] }).to contain_exactly(
-               [ "assigned", second_member, users(:officer) ], [ "unassigned", users(:member), users(:officer) ]
-          )
+               patch task_path(task), params: { task: { title: "Renamed", status: "backlog", assignee_ids: [ users(:member).id ] } }
+          end.not_to change { [ TaskAssignment.count, TaskStatusChange.count ] }
      end
 
-     it "records assignments made when a task is created" do
-          sign_in(users(:officer))
-          post tasks_path, params: { task: {
-               title: "New task", due_date: "2026-10-20", estimated_hours: "1", project_id: projects(:aero).id,
-               team_id: teams(:aerodynamics).id, assignee_ids: [ users(:member).id ]
-          } }
-
-          event = TaskEvent.order(:id).last
-          expect(event).to have_attributes(action: "assigned", subject_user: users(:member), actor: users(:officer))
-     end
-
-     it "does not record anything when the assignees are unchanged" do
-          sign_in(users(:officer))
-
-          expect do
-               patch task_path(task), params: { task: { title: "Renamed", assignee_ids: [ users(:member).id ] } }
-          end.not_to change(TaskEvent, :count)
-     end
-
-     it "shows the history newest first on the task page, in plain text" do
+     it "combines assignment and status history newest first with named actors" do
           travel_to(Time.zone.local(2026, 10, 1, 9, 0)) do
                sign_in(users(:member))
                patch task_path(task), params: { task: { status: "in_progress" } }
@@ -53,40 +46,43 @@ RSpec.describe "Task history", type: :request do
                sign_in(users(:officer))
                patch task_path(task), params: { task: { assignee_ids: [ users(:member).id, second_member.id ] } }
           end
-
           get task_path(task)
-          expect(history_items).to eq([
+          expect(history_items.first(2)).to eq([
                "October 02, 2026 14:30 Olivia Officer assigned Sam Second",
                "October 01, 2026 09:00 Morgan Member changed the status from Backlog to In progress"
           ])
+          expect(history_items.last).to include("Olivia Officer created the task in Backlog")
      end
 
-     it "explains when a task has no history yet" do
-          sign_in(users(:officer))
-          get task_path(task)
-
-          expect(response.parsed_body.at_css("[data-history]").text).to include("No changes have been recorded yet.")
-     end
-
-     it "shows history only to leaders who manage the task" do
-          TaskEvent.create!(task: task, actor: users(:member), action: "status_changed",
-                            from_status: "backlog", to_status: "in_progress")
-
+     it "shows the initial status to leaders and hides the history from members" do
           sign_in(users(:chief))
           get task_path(task)
-          expect(history_items.size).to eq(1)
-
+          expect(history_items.last).to include("created the task")
           sign_in(users(:member))
           get task_path(task)
           expect(response.parsed_body.at_css("[data-history]")).to be_nil
      end
 
-     it "cannot be changed or deleted once saved" do
-          event = TaskEvent.create!(task: task, actor: users(:member), action: "status_changed",
-                                    from_status: "backlog", to_status: "in_progress")
+     it "keeps all history and logged hours when a leader tries to delete the task" do
+          sign_in(users(:chief))
+          expect { delete task_path(task) }.not_to change { [ Task.count, TaskAssignment.count, TaskStatusChange.count, TimeEntry.count ] }
+          expect(response).to redirect_to(task_path(task))
+          expect(flash[:alert]).to include("cannot be deleted")
+          expect { task.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
+     end
 
-          expect { event.update!(to_status: "completed") }.to raise_error(ActiveRecord::ReadOnlyRecord)
-          expect { event.destroy! }.to raise_error(ActiveRecord::ReadOnlyRecord)
-          expect(Rails.application.routes.named_routes.names.grep(/event/)).to be_empty
+     it "prevents editing or deleting status history and rewriting assignment periods in SQL" do
+          change = task_status_changes(:wing_initial)
+          expect { change.update!(to_status: "completed") }.to raise_error(ActiveRecord::ReadOnlyRecord)
+          expect { change.destroy! }.to raise_error(ActiveRecord::ReadOnlyRecord)
+          connection = ApplicationRecord.connection
+          [
+               "UPDATE task_status_changes SET to_status = 1 WHERE id = #{change.id}",
+               "DELETE FROM task_status_changes WHERE id = #{change.id}",
+               "DELETE FROM task_assignments WHERE task_id = #{task.id}",
+               "UPDATE task_assignments SET assigned_by_id = #{users(:chief).id} WHERE task_id = #{task.id}"
+          ].each do |sql|
+               expect { ApplicationRecord.transaction(requires_new: true) { connection.execute(sql) } }.to raise_error(ActiveRecord::StatementInvalid)
+          end
      end
 end

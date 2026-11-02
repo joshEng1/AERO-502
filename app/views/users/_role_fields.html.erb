@@ -1,17 +1,13 @@
-<div class="form-grid">
+<div class="form-grid" data-role-fields>
   <div class="field">
     <%= form.label :role %>
-    <%= form.select :role, User::ROLE_LABELS.map { |value, label| [ label, value ] }, {}, **field_error_attributes(user, :role) %>
+    <%= form.select :role, User::ROLE_LABELS.map { |value, label| [label, value] }, {}, **field_error_attributes(user, :role) %>
     <%= field_error(user, :role) %>
   </div>
   <div class="field">
-    <%= form.label :team_id, "Team" %>
-    <%= form.collection_select :team_id, Team.active.or(Team.where(id: user.team_id)).order(:name), :id, :name, { include_blank: "No team (Chief Engineer only)" }, **field_error_attributes(user, :team) %>
-    <%= field_error(user, :team) %>
-  </div>
-  <div class="field">
-    <%= form.label :subteam_id, "Subteam" %>
-    <%= form.select :subteam_id, subteam_options(user.subteam_id), { include_blank: "No subteam" }, **field_error_attributes(user, :subteam) %>
+    <%= form.label :subteam_id, "Class · Subteam" %>
+    <%= form.select :subteam_id, subteam_options(user.subteam_id), { include_blank: "No membership (Chief Engineer only)" }, **field_error_attributes(user, :subteam) %>
+    <p class="hint">Members and officers belong to exactly one subteam. Chief Engineers have no membership.</p>
     <%= field_error(user, :subteam) %>
   </div>
 </div>

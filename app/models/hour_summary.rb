@@ -5,8 +5,10 @@ class HourSummary
 
      attr_reader :tasks, :from, :to, :errors
 
-     def initialize(tasks:, from: nil, to: nil)
+     def initialize(tasks:, from: nil, to: nil, members: nil, member_id: nil)
           @tasks = tasks
+          @included_members = members
+          @member_id = member_id
           @errors = []
           @from = parse_date(from, "Start date")
           @to = parse_date(to, "End date")
@@ -36,15 +38,22 @@ class HourSummary
           [ *member_rows.map(&:estimate), *member_rows.map(&:actual), 1 ].max
      end
 
+     def actual_for_task(task)
+          entries_in_range.select { |entry| entry.task_id == task.id }.sum(BigDecimal("0"), &:hours)
+     end
+
      private
 
      def members
-          (tasks.flat_map(&:assignees) + entries_in_range.map(&:user)).uniq.sort_by(&:name)
+          rows = (@included_members ? @included_members.to_a : tasks.flat_map(&:assignees) + entries_in_range.map(&:user)).uniq
+          rows = rows.select { |member| member.id == @member_id } if @member_id
+          rows.sort_by { |member| [ member.name, member.id ] }
      end
 
      def entries_in_range
           @entries_in_range ||= tasks.flat_map(&:time_entries).select do |entry|
-               (from.nil? || entry.worked_on >= from) && (to.nil? || entry.worked_on <= to)
+               (from.nil? || entry.worked_on >= from) && (to.nil? || entry.worked_on <= to) &&
+                    (@member_id.nil? || entry.user_id == @member_id)
           end
      end
 

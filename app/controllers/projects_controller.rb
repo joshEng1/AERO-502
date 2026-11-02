@@ -6,14 +6,14 @@ class ProjectsController < OrganizationRecordsController
      end
 
      def parent_field
-          :subteam_id
+          :team_id
      end
 
      def parent_options
-          Subteam.active.where(team_id: team_ids_for_choices).includes(:team).sort_by(&:full_name)
+          Team.where(id: team_ids_for_choices).order(:name)
      end
 
      def team_id_for(project)
-          project.subteam&.team_id
+          project.team_id
      end
 end

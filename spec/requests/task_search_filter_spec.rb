@@ -88,7 +88,7 @@ RSpec.describe "Task search and filters", type: :request do
           get tasks_path
 
           controls = response.parsed_body.css(".filter-bar input[type=search], .filter-bar select")
-          expect(controls.size).to eq(4)
+          expect(controls.size).to eq(7)
           controls.each do |control|
                expect(response.parsed_body.at_css("label[for='#{control["id"]}']")).to be_present
           end

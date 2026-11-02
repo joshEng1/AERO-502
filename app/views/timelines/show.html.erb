@@ -24,6 +24,8 @@
   </div>
 <% end %>
 
+<p><%= link_to "Download timeline CSV", timeline_path(format: :csv, filter: task_filter.to_h, from: timeline.from, weeks: timeline.weeks), class: "button button-secondary" %></p>
+
 <section class="panel gantt-panel" aria-labelledby="gantt-heading">
   <div class="gantt-toolbar">
     <h2 id="gantt-heading"><%= timeline.from.to_fs(:long) %> – <%= timeline.to.to_fs(:long) %></h2>
@@ -45,7 +47,7 @@
   <% if timeline.tasks.empty? %>
     <p class="muted">No tasks match these filters.</p>
   <% else %>
-    <div class="gantt-scroll">
+    <div class="gantt-scroll" tabindex="0" role="region" aria-label="Scrollable task timeline">
       <div class="gantt" data-gantt data-from="<%= timeline.from.iso8601 %>" style="--days: <%= timeline.days.size %>">
         <div class="gantt-head">
           <div class="gantt-corner">Task</div>
@@ -73,6 +75,7 @@
                   <div class="gantt-row" data-gantt-row data-task-id="<%= task.id %>">
                     <div class="gantt-task">
                       <%= link_to task.title, task %>
+                      <% if overdue %><span class="overdue-label">Overdue</span><% end %>
                       <span class="muted"><%= task.assignees.map(&:name).to_sentence.presence || "Unassigned" %></span>
                     </div>
                     <div class="gantt-track">

@@ -1,9 +1,18 @@
 class ApplicationController < ActionController::Base
      allow_browser versions: :modern
 
+     before_action :check_session_access
+
      helper_method :current_user, :signed_in?
 
      private
+
+     # Check every page and action, including public pages, after access is revoked.
+     def check_session_access
+          return unless session[:user_id]
+
+          require_sign_in unless signed_in?
+     end
 
      def current_user
           @current_user ||= User.find_by(id: session[:user_id], access_revoked_at: nil)

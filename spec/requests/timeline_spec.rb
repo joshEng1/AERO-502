@@ -118,7 +118,7 @@ RSpec.describe "Task timeline", type: :request do
           expect(response.parsed_body.at_css("nav a[href='#{timeline_path}']")).to be_nil
           get timeline_path
           expect(response).to redirect_to(tasks_path)
-          expect(flash[:alert]).to eq("The timeline is available to team officers and the Chief Engineer.")
+          expect(flash[:alert]).to eq("Access denied. The timeline is available to team officers and the Chief Engineer.")
      end
 
      it "explains an empty timeline" do

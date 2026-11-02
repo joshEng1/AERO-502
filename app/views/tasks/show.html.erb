@@ -11,23 +11,27 @@
   <% end %>
 </div>
 
+<% visible_entries = current_user.leader? ? @task.time_entries : @task.time_entries.where(user: current_user) %>
+<% visible_actual = visible_entries.sum(:hours) %>
 <div class="detail-grid">
   <section class="panel">
     <h2>Task details</h2>
     <dl class="detail-list">
+      <div><dt>Subteams of active assignees</dt><dd><%= @task.subteam_names %></dd></div>
       <div><dt>Expected deliverables</dt><dd><%= simple_format(@task.description) %></dd></div>
-      <div><dt>Work instructions</dt><dd><%= simple_format(@task.instructions.presence || "No additional instructions.") %></dd></div>
+      <div><dt>Work instructions</dt><dd><%= simple_format(@task.instructions_without_reference_links.presence || "No additional instructions.") %></dd></div>
       <div><dt>Assigned members</dt><dd><%= @task.assignees.map(&:name).to_sentence.presence || "Unassigned" %></dd></div>
+      <div><dt>Primary contact</dt><dd><%= @task.primary_contact&.name || "None selected" %></dd></div>
       <div data-estimate><dt>Estimated hours</dt><dd><%= estimate_label(@task.estimated_hours) %></dd></div>
       <div><dt>Start date</dt><dd><%= @task.start_date.to_fs(:long) %></dd></div>
       <div><dt>Due date</dt><dd><%= @task.due_date.to_fs(:long) %></dd></div>
       <div>
         <dt>Reference links</dt>
         <dd>
-          <% if @task.links.any? %>
+          <% if @task.reference_urls.any? %>
             <ul class="link-list">
-              <% @task.links.each do |link| %>
-                <li><%= external_link(link.url) %></li>
+              <% @task.reference_urls.each do |url| %>
+                <li><%= external_link(url) %></li>
               <% end %>
             </ul>
           <% else %>
@@ -41,12 +45,13 @@
   <aside>
     <section class="panel effort-panel">
       <h2>Planned vs. actual</h2>
+      <% unless current_user.leader? %><p class="hint">Actual hours show your own entries. The estimate is for the whole task.</p><% end %>
       <div class="effort-numbers">
         <div><strong><%= number_with_precision(@task.estimated_hours, precision: 2, strip_insignificant_zeros: true) %>h</strong><span>Estimated</span></div>
-        <div><strong><%= number_with_precision(@task.total_actual_hours, precision: 2, strip_insignificant_zeros: true) %>h</strong><span>Actual</span></div>
-        <div><strong><%= number_with_precision(@task.variance_hours, precision: 2, strip_insignificant_zeros: true) %>h</strong><span>Variance</span></div>
+        <div><strong><%= number_with_precision(visible_actual, precision: 2, strip_insignificant_zeros: true) %>h</strong><span>Actual</span></div>
+        <div><strong><%= number_with_precision((visible_actual - @task.estimated_hours), precision: 2, strip_insignificant_zeros: true) %>h</strong><span>Variance</span></div>
       </div>
-      <p class="variance-note" data-variance><%= variance_label(@task.variance_hours) %></p>
+      <p class="variance-note" data-variance><%= variance_label((visible_actual - @task.estimated_hours)) %></p>
     </section>
 
     <% if current_user.can_work_on?(@task) %>
@@ -75,16 +80,25 @@
   </aside>
 </div>
 
+<% if @task.blocked? %><p class="panel" data-blocked>Blocked by unfinished prerequisite work.</p><% end %>
 <% if current_user.can_manage?(@task) %>
+  <section class="panel" data-prerequisites>
+    <h2>Prerequisites</h2>
+    <% if @task.prerequisites.any? %>
+      <ul><% @task.prerequisites.includes(:assignees).order(:title).each do |prerequisite| %>
+        <li><%= link_to prerequisite.title, prerequisite %> · <%= prerequisite.status.humanize %> · <%= prerequisite.assignees.map(&:name).to_sentence.presence || "Unassigned" %></li>
+      <% end %></ul>
+    <% else %><p>No prerequisites.</p><% end %>
+  </section>
   <section class="panel" data-history>
     <h2>History</h2>
-    <% events = @task.events.includes(:actor, :subject_user).order(created_at: :desc, id: :desc) %>
+    <% events = @task.history %>
     <% if events.any? %>
       <ol class="plain-list history-list">
         <% events.each do |event| %>
           <li>
             <time datetime="<%= event.created_at.iso8601 %>"><%= event.created_at.to_fs(:long) %></time>
-            <span><strong><%= event.actor_name %></strong> <%= event.description %></span>
+            <span><strong><%= event.actor.name %></strong> <%= event.description %></span>
           </li>
         <% end %>
       </ol>
@@ -96,9 +110,9 @@
 
 <section class="panel">
   <h2>Hours by member</h2>
-  <% if @task.time_entries.any? %>
+  <% if visible_entries.any? %>
     <div class="member-grid">
-      <% @task.assignees.each do |member| %>
+      <% (current_user.leader? ? (@task.assignees.to_a + visible_entries.includes(:user).map(&:user)).uniq : [current_user]).each do |member| %>
         <article>
           <span><%= member.name %></span>
           <strong><%= number_with_precision(@task.actual_hours_for(member), precision: 2, strip_insignificant_zeros: true) %> hours</strong>
@@ -119,7 +133,7 @@
           </tr>
         </thead>
         <tbody>
-          <% @task.time_entries.includes(:user).order(worked_on: :desc, id: :desc).each do |entry| %>
+          <% visible_entries.includes(:user).order(worked_on: :desc, id: :desc).each do |entry| %>
             <tr data-time-entry>
               <td><%= entry.worked_on.to_fs(:long) %></td>
               <td><%= entry.user.name %></td>

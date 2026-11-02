@@ -5,13 +5,21 @@
 </div>
 <div class="field">
   <%= form.label :project_id, "Project" %>
-  <%= form.select :project_id, options_for_select(Project.active.includes(subteam: :team).sort_by(&:full_name).map { |project| [ project.full_name, project.id ] }, task_filter.project_id), include_blank: "All projects" %>
+  <%= form.select :project_id, options_for_select(Project.active.where(team_id: (current_user.chief_engineer? ? Team.select(:id) : [current_user.team_id])).includes(:team).sort_by(&:full_name).map { |project| [ project.full_name, project.id ] }, task_filter.project_id), include_blank: "All projects" %>
 </div>
 <div class="field">
   <%= form.label :team_id, "Team" %>
-  <%= form.select :team_id, options_from_collection_for_select(Team.active.order(:name), :id, :name, task_filter.team_id), include_blank: "All teams" %>
+  <%= form.select :team_id, options_from_collection_for_select((current_user.chief_engineer? ? Team.active : Team.where(id: current_user.team_id)).order(:name), :id, :name, task_filter.team_id), include_blank: "All teams" %>
 </div>
 <div class="field">
   <%= form.label :subteam_id, "Subteam" %>
   <%= form.select :subteam_id, subteam_options(task_filter.subteam_id), include_blank: "All subteams" %>
 </div>
+
+<% if current_user.leader? %>
+  <div class="field"><%= form.label :project_ids, "Additional projects" %><%= form.collection_select :project_ids, Project.active.where(team_id: (current_user.chief_engineer? ? Team.select(:id) : [current_user.team_id])).order(:name), :id, :name, { selected: task_filter.project_ids }, multiple: true %></div>
+  <div class="field"><%= form.label :team_ids, "Additional teams" %><%= form.collection_select :team_ids, (current_user.chief_engineer? ? Team.active : Team.where(id: current_user.team_id)).order(:name), :id, :name, { selected: task_filter.team_ids }, multiple: true %></div>
+  <div class="field"><%= form.label :member_id, "Member" %><%= form.collection_select :member_id, User.in_teams(current_user.chief_engineer? ? Team.select(:id) : [current_user.team_id]).order(:name), :id, :name, { selected: task_filter.member_id, include_blank: "All members" } %></div>
+  <div class="field"><%= form.label :task_from, "Task dates from" %><%= form.date_field :task_from, value: task_filter.task_from %></div>
+  <div class="field"><%= form.label :task_to, "Task dates to" %><%= form.date_field :task_to, value: task_filter.task_to %></div>
+<% end %>

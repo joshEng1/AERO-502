@@ -318,3 +318,14 @@ thead th { color: var(--muted); font-size: .78rem; letter-spacing: .06em; text-t
 .board-summary .summary-alert { color: #a22929; }
 .overdue-label { display: inline-block; margin-right: .35rem; padding: .05rem .45rem; border-radius: 999px; background: #a22929; color: white; font-size: .72rem; font-weight: 800; letter-spacing: .02em; }
 .hours-panel { margin-top: 1.5rem; scroll-margin-top: 1rem; }
+
+/* Searchable multi-assignee input with a bounded, keyboard-operated list. */
+.member-selector { position: relative; }
+.member-options { max-height: 14rem; overflow-y: auto; border: 1px solid #9ca3af; border-radius: .4rem; background: #fff; }
+.member-options [role="option"] { padding: .6rem .75rem; cursor: pointer; }
+.member-options [aria-selected="true"] { font-weight: 700; background: #e6eef8; }
+.member-options .is-active { outline: 2px solid #315d8c; outline-offset: -2px; }
+.member-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .5rem; }
+.member-chip { border: 1px solid #8b9cb0; border-radius: 1rem; background: #eef3f8; color: #17324f; padding: .35rem .65rem; cursor: pointer; }
+.member-options[hidden], [data-member-source][hidden] { display: none; }
+.gantt-scroll:focus { outline: 2px solid #315d8c; outline-offset: 3px; }

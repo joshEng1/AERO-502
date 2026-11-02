@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe User, type: :model do
      it "normalizes email before validation" do
           user = User.new(name: "Test Member", email: "  TEST@EXAMPLE.COM ",
-                          password: "password", role: :member, team: teams(:aerodynamics))
+                          password: "password", role: :member, subteam: subteams(:wing))
 
           expect(user.valid?).to be_truthy
           expect(user.email).to eq("test@example.com")

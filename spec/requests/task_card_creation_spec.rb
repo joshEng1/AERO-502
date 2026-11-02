@@ -69,16 +69,16 @@ RSpec.describe "Task card creation", type: :request do
                .to include("must each be a full web address starting with http:// or https://")
      end
 
-     it "saves a valid task in Backlog, stores each link separately, and shows every detail" do
+     it "saves the chosen initial status, keeps reference links in instructions, and shows every detail" do
           sign_in(users(:officer))
 
           expect do
                post tasks_path, params: { task: valid_task(status: "completed") }
-          end.to change(Task, :count).by(1).and change(TaskLink, :count).by(2)
+          end.to change(Task, :count).by(1)
 
           task = Task.order(:id).last
-          expect(task).to be_backlog
-          expect(task.links.map(&:url)).to eq([ "https://example.com/ribs", "https://example.com/cnc" ])
+          expect(task).to be_completed
+          expect(task.reference_urls).to eq([ "https://example.com/ribs", "https://example.com/cnc" ])
           follow_redirect!
           expect(response.body).to include("Task was created successfully.")
           page = response.parsed_body
@@ -88,7 +88,7 @@ RSpec.describe "Task card creation", type: :request do
           expect(response.body).to include("Twelve finished ribs.", "Use the CNC template.")
 
           get tasks_path
-          backlog = response.parsed_body.at_css("#backlog-heading").ancestors("section").first
+          backlog = response.parsed_body.at_css("#completed-heading").ancestors("section").first
           expect(backlog.text).to include("Machine wing ribs")
      end
 
@@ -108,7 +108,7 @@ RSpec.describe "Task card creation", type: :request do
 
           expect do
                post tasks_path, params: {
-                    task: valid_task(project_id: projects(:airframe_build).id)
+                    task: valid_task(project_id: projects(:airframe_build).id, subteam_id: subteams(:airframe).id)
                }
           end.to change(Task, :count).by(1)
           expect(Task.order(:id).last.team).to eq(teams(:structures))
@@ -118,7 +118,7 @@ RSpec.describe "Task card creation", type: :request do
           sign_in(users(:officer))
           patch task_path(tasks(:wing_test)), params: { task: { reference_links_text: "https://example.com/new" } }
 
-          expect(tasks(:wing_test).reload.links.map(&:url)).to eq([ "https://example.com/new" ])
+          expect(tasks(:wing_test).reload.reference_urls).to eq([ "https://example.com/new" ])
      end
 
      it "hides the Create Task option from members and refuses direct creation" do

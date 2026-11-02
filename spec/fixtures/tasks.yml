@@ -1,15 +1,15 @@
 wing_test:
   title: Wing load test
   description: Complete the load test.
-  instructions: Use the approved fixture.
+  instructions: "Use the approved fixture.\n\nReference links:\nhttps://example.com/wing"
   start_date: 2026-09-28
   due_date: 2026-10-05
   estimated_hours: 10
   status: 0
   project: aero
-  team: aerodynamics
-  subteam: wing
   creator: officer
+  created_at: 2026-09-01 12:00:00
+  updated_at: 2026-09-01 12:00:00
 
 spar_check:
   title: Verify spar dimensions
@@ -20,6 +20,6 @@ spar_check:
   estimated_hours: 4
   status: 1
   project: airframe_build
-  team: structures
-  subteam: airframe
   creator: other_officer
+  created_at: 2026-09-01 12:00:00
+  updated_at: 2026-09-01 12:00:00

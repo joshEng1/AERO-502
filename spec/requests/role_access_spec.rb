@@ -41,10 +41,10 @@ RSpec.describe "Role-based access", type: :request do
 
      it "keeps the previous role when the change is invalid" do
           sign_in(users(:chief))
-          patch user_path(users(:member)), params: { user: { role: "officer", team_id: "" } }
+          patch user_path(users(:member)), params: { user: { role: "officer", subteam_id: "" } }
 
           expect(response).to have_http_status(:unprocessable_content)
-          expect(response.body).to include("Team can&#39;t be blank")
+          expect(response.body).to include("Subteam is required for a member or officer")
           expect(users(:member).reload).to be_member
      end
 

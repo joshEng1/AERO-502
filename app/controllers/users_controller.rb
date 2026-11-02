@@ -4,7 +4,7 @@ class UsersController < ApplicationController
      before_action :set_user, only: %i[edit update revoke restore]
 
      def index
-          @users = User.includes(:team, :subteam).order(:name)
+          @users = User.includes(membership: { subteam: :team }).order(:name)
      end
 
      # Adds a person to the allowed list; they sign in with Google using this email.
@@ -36,8 +36,11 @@ class UsersController < ApplicationController
      end
 
      def revoke
-          @user.update!(access_revoked_at: Time.current)
-          redirect_to users_path, notice: "#{@user.name} can no longer sign in. Their tasks and hours are kept."
+          if @user.update(access_revoked_at: Time.current)
+               redirect_to users_path, notice: "#{@user.name} can no longer sign in. Their tasks and hours are kept."
+          else
+               redirect_to users_path, alert: @user.errors.full_messages.to_sentence
+          end
      end
 
      def restore
@@ -48,7 +51,7 @@ class UsersController < ApplicationController
      private
 
      def ensure_chief_engineer
-          deny_access("Only the Chief Engineer can manage people and roles.") unless current_user.chief_engineer?
+          deny_access("Access denied. Only the Chief Engineer can manage people and roles.") unless current_user.chief_engineer?
      end
 
      def set_user
@@ -58,6 +61,7 @@ class UsersController < ApplicationController
      # Only the Chief Engineer reaches these actions (see ensure_chief_engineer).
      def assign_role
           @user.role = params.require(:user).fetch(:role, @user.role)
+          @user.subteam = nil if @user.chief_engineer? && !params.require(:user).key?(:subteam_id)
      end
 
      def user_params
