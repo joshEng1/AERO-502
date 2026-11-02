@@ -10,6 +10,9 @@ RSpec.describe "Meeting task assignment", type: :system do
                options.add_argument("--screen-info={1600x1200}")
                options.add_argument("--window-size=1280,1000")
                options.add_argument("--window-position=0,0")
+               # Keep Chrome-owned credential prompts out of the synthetic login flow.
+               options.add_preference("credentials_enable_service", false)
+               options.add_preference("profile.password_manager_leak_detection", false)
           end
      end
 
@@ -37,6 +40,30 @@ RSpec.describe "Meeting task assignment", type: :system do
                    };
                  })()
                JS
+               details["browserVersion"] = page.driver.browser.capabilities.browser_version
+               details["driverVersion"] = page.driver.browser.capabilities["chrome"]&.fetch("chromedriverVersion", nil)
+               if details["input"] && details["events"].empty?
+                    begin
+                         # Preserve the actual failure before diagnostic actions change browser state.
+                         FileUtils.mkdir_p(Rails.root.join("tmp/capybara"))
+                         page.save_screenshot(Rails.root.join("tmp/capybara/member_selector_before_probe.png"))
+                         search = find("#task_member_search")
+                         page.driver.browser.action.send_keys(:escape).perform
+                         search.click
+                         details["after_escape_and_click"] = selector_probe_state
+                         unless details["after_escape_and_click"]["focused"]
+                              page.execute_async_script(<<~JS, search)
+                                const done = arguments[arguments.length - 1];
+                                arguments[0].scrollIntoView({block: "center"});
+                                requestAnimationFrame(() => requestAnimationFrame(() => done()));
+                              JS
+                              search.click
+                              details["after_centered_click"] = selector_probe_state
+                         end
+                    rescue StandardError => error
+                         details["probe_error"] = { type: error.class.name, message: error.message }
+                    end
+               end
                message = "#{example.exception.message}\nBrowser diagnostics: #{details.to_json}"
                if ENV["GITHUB_ACTIONS"] == "true"
                     # Escape workflow-command data so the failure is readable through GitHub's checks API.
@@ -151,5 +178,18 @@ RSpec.describe "Meeting task assignment", type: :system do
           expect(task.primary_contact).to eq(members.last)
           expect(task.due_date).to eq(due_date)
           expect(task.status_changes.first.to_status).to eq("completed")
+     end
+
+     def selector_probe_state
+          page.evaluate_script(<<~JS)
+            (() => {
+              const input = document.getElementById("task_member_search");
+              return {focused: input.matches(":focus"), documentFocused: document.hasFocus(),
+                      activeElement: document.activeElement.id || document.activeElement.nodeName,
+                      expanded: input.getAttribute("aria-expanded"),
+                      rect: input.getBoundingClientRect().toJSON(),
+                      events: window.memberSelectorEvents || []};
+            })()
+          JS
      end
 end

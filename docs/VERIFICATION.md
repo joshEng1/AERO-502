@@ -50,6 +50,16 @@ The field-position assertion remains active while the mouse is pressed; focus an
 
 The local suite passed **249 examples, 0 failures**, seed `6472`, in **70.42 seconds**, with **1083/1083 lines and 394/394 branches covered**. RuboCop inspected **124 files with no offenses**. This used PGlite and Chrome Headless Shell **156.0.8078.80**, with `CI=true` and `GITHUB_ACTIONS=true`; the native concurrency test remains excluded locally and previously passed in CI. The failing-configuration run also verified that browser diagnostics are emitted in GitHub annotation format. The display mismatch is a candidate explanation for CI's missed click, not a confirmed native-Chrome root cause: the next full Chrome/PostgreSQL 16 CI run must establish whether this correction clears the failure.
 
+### Native Chrome click delivery investigation
+
+[CI run 41410706911](https://github.com/joshEng1/AERO-502/actions/runs/41410706911), commit `33c6c95`, still failed the selector's focus assertion. The public diagnostic annotation confirms the corrected **1600x1200 screen**, **1280x1000 window**, **1280x857 viewport**, an enabled input with `pointer-events: auto`, a correct center hit target, and `document.hasFocus() == true`. However, **no pointer, mouse or focus events reached the document**, and the active element remained `BODY`. Thus the screen correction did not resolve the missing click. Lint and both security scans passed. This evidence does not establish a specific browser dialog or driver defect as the cause.
+
+The next test-profile change turns off Chrome credential saving and credential-leak prompts only in the disposable Selenium profile used with synthetic accounts. Browser-owned password prompts are a [reported cause of interrupted Selenium tests](https://github.com/selenide/selenide/discussions/2658); this remains a hypothesis for this run. Application authentication and browser assertions are unchanged.
+
+If another failure has no received events, diagnostics now preserve its original screenshot, record full browser/driver versions, try a native Escape followed by another native click, and then try a centered native click after two animation frames if needed. These are failure-only probes: they never retry or convert the failed example to a pass. Their results and any probe error are included alongside the original failure in the GitHub annotation.
+
+Local verification passed **249 examples, 0 failures**, seed `6472`, in **70.88 seconds**, with **1083/1083 lines and 394/394 branches covered**. RuboCop inspected **124 files with no offenses**. A separate intentionally failing scratch example verified that the original failure and native-click probe results are both retained. These checks used PGlite and Chrome Headless Shell **156.0.8078.80**; they do **not** reproduce or resolve the full-Chrome CI failure. Native CI confirmation remains required.
+
 ## Sprint 2 (October 15, 2026)
 
 All checks were run on `main` at `1f7fa94` (PR #25, the latest `main` as of this record). They ran in a clean clone, using the same commands as [CI](../.github/workflows/ci.yml).
