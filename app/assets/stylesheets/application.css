@@ -329,3 +329,16 @@ thead th { color: var(--muted); font-size: .78rem; letter-spacing: .06em; text-t
 .member-chip { border: 1px solid #8b9cb0; border-radius: 1rem; background: #eef3f8; color: #17324f; padding: .35rem .65rem; cursor: pointer; }
 .member-options[hidden], [data-member-source][hidden] { display: none; }
 .gantt-scroll:focus { outline: 2px solid #315d8c; outline-offset: 3px; }
+
+/* Searchable single-member filter on the board and timeline. */
+[data-member-filter] { min-width: 0; }
+.member-filter-control { position: relative; min-width: 0; }
+.member-filter-control input { padding-right: 2.75rem; }
+.member-filter-clear { position: absolute; top: 0; right: 0; width: 2.75rem; min-height: 44px; border: 0; border-radius: 7px; color: var(--maroon); background: transparent; font: inherit; font-size: 1.4rem; cursor: pointer; }
+.member-filter-popup { position: absolute; top: calc(100% + .35rem); left: 0; right: 0; z-index: 10; border: 1px solid var(--line); border-radius: 7px; background: white; box-shadow: var(--shadow); }
+.member-filter-options { max-height: min(14rem, 40vh); overflow-y: auto; overscroll-behavior: contain; }
+.member-filter-options [role="option"] { padding: .6rem .75rem; cursor: pointer; overflow-wrap: anywhere; }
+.member-filter-options [aria-selected="true"] { color: var(--maroon); background: #f3e7eb; font-weight: 700; }
+.member-filter-options [role="option"]:hover, .member-filter-options .is-active { background: #eee8df; outline: 2px solid var(--maroon); outline-offset: -2px; }
+.member-filter-message { margin: 0; padding: .5rem .75rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+.member-filter-popup[hidden], .member-filter-clear[hidden], [data-member-filter-source][hidden] { display: none; }
