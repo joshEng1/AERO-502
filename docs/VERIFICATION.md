@@ -24,6 +24,14 @@ The local suite used `bundle exec rspec --tag ~postgres_concurrency`. Exactly on
 
 The final style/security commands were `bundle exec rubocop`, `bundle exec brakeman --no-pager` and `bundle exec ruby bin/importmap audit`. No production database was connected, migrated or restored. Google tests use OmniAuth test mode; real OAuth configuration, staging migration against the real backup, Heroku restart/recovery, training, offline-PDF delivery and customer acceptance must be recorded in [SPRINT3_HANDOVER.md](SPRINT3_HANDOVER.md).
 
+### CI follow-up after the `test` upload
+
+[CI run 41403959885](https://github.com/joshEng1/AERO-502/actions/runs/41403959885) tested uploaded commit `1a08530`. Lint and both security scans passed. RSpec ran 250 examples with two failures, while retaining 100% line and branch coverage. The uploaded workflow used an unpinned PostgreSQL image; the configuration correction restores PostgreSQL 16.
+
+- The concurrency test failed before opening its extra sessions because unfiltered `conninfo_hash` passed an empty service setting to libpq. Removing blank settings reproduced-and-resolved this connection error locally; both connection/query checks succeeded. Opened connections are also retained for cleanup if a later connection attempt fails. The actual independent-session race still requires the next native PostgreSQL CI run.
+- The browser check found the selector options in the DOM but reported them as hidden. A new regression reproduced the dropdown opening below the viewport when the search field sits at its bottom edge. Opening now scrolls the bounded dropdown into view. The test checks the open state, visible dropdown and first choice, and counts all 82 available choices including scrolled-out rows; keyboard selection, retained choices, primary contact, error recovery and mobile checks remain enforced. CI also retains browser screenshots for diagnosis.
+- After the fixes, the local suite with the original CI seed (`60876`) passed **249 examples, 0 failures**, with **1083/1083 lines and 394/394 branches covered**. This used PGlite and headless Chrome **156.0.8078.80**; only the native concurrency test was excluded. RuboCop inspected 124 files with no offenses. These results do not claim that the next CI run has passed.
+
 ## Sprint 2 (October 15, 2026)
 
 All checks were run on `main` at `1f7fa94` (PR #25, the latest `main` as of this record). They ran in a clean clone, using the same commands as [CI](../.github/workflows/ci.yml).

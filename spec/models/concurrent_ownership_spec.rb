@@ -13,7 +13,11 @@ RSpec.describe "Concurrent ownership transfers", :postgres_concurrency do
           original_project_id = task.project_id
           destination = Subteam.create!(name: "Concurrent transfer destination", team: teams(:structures))
           original_team_id = teams(:aerodynamics).id
-          connections = 2.times.map { PG.connect(ApplicationRecord.connection.raw_connection.conninfo_hash) }
+          # Unset libpq options must be omitted; an empty service name triggers
+          # a lookup for a nonexistent service instead of opening a connection.
+          connection_options = ApplicationRecord.connection.raw_connection.conninfo_hash.compact_blank
+          connections = []
+          2.times { connections << PG.connect(connection_options) }
           first, second = connections
           second_pid = second.backend_pid
           second.exec("SET lock_timeout = '15s'")

@@ -88,6 +88,8 @@ export function initializeMemberSelectors(root = document) {
       render();
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
+      // Opening near the bottom of the page must reveal the bounded list.
+      list.scrollIntoView({block: "nearest"});
     };
     input.addEventListener("focus", open);
     input.addEventListener("click", open);

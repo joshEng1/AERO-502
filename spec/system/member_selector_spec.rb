@@ -22,11 +22,18 @@ RSpec.describe "Meeting task assignment", type: :system do
           visit new_task_path(return_to_board: "1", status: "completed", filter: { project_id: projects(:aero).id, subteam_id: subteams(:wing).id })
           expect(page).to have_select("Status", selected: "Completed")
           search = find("#task_member_search")
+          # Exercise opening the selector at the bottom edge of the viewport.
+          page.execute_script('arguments[0].scrollIntoView({block: "end"})', search)
           search.click
-          expect(page).to have_css('#member-options [role="option"]', count: 82)
+          expect(page).to have_css('#task_member_search[aria-expanded="true"]')
+          expect(page).to have_css('#member-options:not([hidden])', visible: true)
+          expect(page.evaluate_script('document.getElementById("member-options").getBoundingClientRect().bottom <= window.innerHeight + 1')).to be(true)
+          # All choices belong in the bounded list, including scrolled-out rows.
+          expect(page).to have_css('#member-options [role="option"]', count: 82, visible: :all)
+          expect(page).to have_css('#member-options [role="option"]', text: "Meeting Member 01", visible: true)
           expect(page.evaluate_script('document.getElementById("member-options").getBoundingClientRect().height')).to be <= 300
           expect(page).not_to have_css('input[type="checkbox"]')
-          expect(page).not_to have_css('#member-options [role="option"]', text: users(:other_member).name)
+          expect(page).not_to have_css('#member-options [role="option"]', text: users(:other_member).name, visible: :all)
           search.fill_in(with: "meeting MEMBER 70")
           search.send_keys(:arrow_down, :enter)
           expect(page).to have_css('button[aria-label="Remove Meeting Member 70"]')
