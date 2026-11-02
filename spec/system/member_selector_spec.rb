@@ -6,6 +6,47 @@ RSpec.describe "Meeting task assignment", type: :system do
                options.binary = ENV["CHROME_BIN"] if ENV["CHROME_BIN"].present?
                options.add_argument("--no-sandbox") if Process.uid.zero?
                options.add_argument("--disable-dev-shm-usage")
+               # Rails resizes the window after launch; configure the virtual display too.
+               options.add_argument("--screen-info={1600x1200}")
+               options.add_argument("--window-size=1280,1000")
+               options.add_argument("--window-position=0,0")
+          end
+     end
+
+     after do |example|
+          next unless example.exception
+
+          begin
+               details = page.evaluate_script(<<~JS)
+                 (() => {
+                   const describe = node => node ? node.id || node.nodeName : null;
+                   const input = document.getElementById("task_member_search");
+                   const rect = input?.getBoundingClientRect();
+                   return {
+                     browser: navigator.userAgent,
+                     documentFocused: document.hasFocus(),
+                     activeElement: describe(document.activeElement),
+                     screen: {width: screen.width, height: screen.height,
+                              availableWidth: screen.availWidth, availableHeight: screen.availHeight},
+                     window: {width: outerWidth, height: outerHeight, x: screenX, y: screenY},
+                     viewport: {width: innerWidth, height: innerHeight},
+                     input: rect ? {rect: rect.toJSON(), expanded: input.getAttribute("aria-expanded"),
+                                    disabled: input.disabled, pointerEvents: getComputedStyle(input).pointerEvents} : null,
+                     centerTarget: rect ? describe(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)) : null,
+                     events: window.memberSelectorEvents || []
+                   };
+                 })()
+               JS
+               message = "#{example.exception.message}\nBrowser diagnostics: #{details.to_json}"
+               if ENV["GITHUB_ACTIONS"] == "true"
+                    # Escape workflow-command data so the failure is readable through GitHub's checks API.
+                    escaped = message.gsub("%", "%25").gsub("\r", "%0D").gsub("\n", "%0A")
+                    warn "::error file=spec/system/member_selector_spec.rb,title=Member selector browser failure::#{escaped}"
+               else
+                    warn message
+               end
+          rescue StandardError => error
+               warn "Could not capture browser diagnostics: #{error.class}"
           end
      end
 
@@ -22,17 +63,30 @@ RSpec.describe "Meeting task assignment", type: :system do
           visit new_task_path(return_to_board: "1", status: "completed", filter: { project_id: projects(:aero).id, subteam_id: subteams(:wing).id })
           expect(page).to have_select("Status", selected: "Completed")
           search = find("#task_member_search")
+          page.execute_script(<<~JS)
+            window.memberSelectorEvents = [];
+            for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click", "focusin", "focusout"]) {
+              document.addEventListener(type, event => {
+                window.memberSelectorEvents.push({type: event.type, target: event.target.id || event.target.nodeName,
+                  active: document.activeElement.id || document.activeElement.nodeName,
+                  x: event.clientX, y: event.clientY});
+                if (window.memberSelectorEvents.length > 20) window.memberSelectorEvents.shift();
+              }, true);
+            }
+          JS
           # Exercise opening the selector at the bottom edge of the viewport.
           page.execute_script('arguments[0].scrollIntoView({block: "end"})', search)
+          expect(page.evaluate_script("outerWidth <= screen.availWidth && outerHeight <= screen.availHeight")).to be(true),
+               "Chrome's virtual screen must contain the test window"
           search_top = page.evaluate_script('document.getElementById("task_member_search").getBoundingClientRect().top')
           begin
                page.driver.browser.action.move_to(search.native).click_and_hold.perform
                # Moving the field during pointer-down can send the click elsewhere.
-               expect(page).to have_css("#task_member_search:focus")
                expect(page.evaluate_script('document.getElementById("task_member_search").getBoundingClientRect().top')).to be_within(1).of(search_top)
           ensure
                page.driver.browser.action.release.perform
           end
+          expect(page).to have_css("#task_member_search:focus")
           expect(page).to have_css('#task_member_search[aria-expanded="true"]')
           find("#task_estimated_hours").click
           expect(page).to have_css('#task_member_search[aria-expanded="false"]')

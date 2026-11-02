@@ -40,6 +40,16 @@ Local event tracing found that the focus handler scrolled the list into view whi
 
 The corrected local suite passed **249 examples, 0 failures**, seed `46194`, in **70.49 seconds**, with **100% line and branch coverage**. This run used `CI=true`, PGlite and Chrome Headless Shell **156.0.8078.80**; only the native concurrency test was excluded. RuboCop inspected **124 files with no offenses**. The exact closed-state failure has not been reproduced under Headless Shell, so a fresh full Chrome/PostgreSQL 16 CI run is still required to confirm the remaining CI failure is resolved. Deployment and customer UAT remain pending.
 
+### Browser display configuration follow-up
+
+[CI run 41408961903](https://github.com/joshEng1/AERO-502/actions/runs/41408961903), commit `181dfeb`, correctly included the pointer correction. The supplied output reports **250 examples, one failure**, seed `6472`, with **100% line and branch coverage**. The system test stopped at the focus assertion while the mouse button was still held, before checking the completed click. Lint and both security scans passed.
+
+An isolated browser probe and the application test measured a **1280x1000 window on an 800x600 virtual screen** under the existing launch configuration. Rails applies `screen_size` by resizing the window after Chrome starts. Chrome's virtual screen has separate [launch configuration](https://developer.chrome.com/docs/automation-and-testing/headless-screen-config). The test now launches a **1600x1200 virtual screen**, starts its window at **1280x1000 at origin 0,0**, and checks that the display contains the window. This new check failed with the old settings and passes with the corrected settings.
+
+The field-position assertion remains active while the mouse is pressed; focus and dropdown opening are checked after the completed click. Ordinary clicks, keyboard navigation, selected members, mobile opening and saving remain enforced. On failure, the test emits an escaped GitHub error annotation containing the exception, browser version, display/window/viewport sizes, input bounds, hit target, active element and the last 20 pointer/focus events. The annotation uses synthetic test data and can be read through the public checks API; it avoids needing another screenshot just to identify the failing event.
+
+The local suite passed **249 examples, 0 failures**, seed `6472`, in **70.42 seconds**, with **1083/1083 lines and 394/394 branches covered**. RuboCop inspected **124 files with no offenses**. This used PGlite and Chrome Headless Shell **156.0.8078.80**, with `CI=true` and `GITHUB_ACTIONS=true`; the native concurrency test remains excluded locally and previously passed in CI. The failing-configuration run also verified that browser diagnostics are emitted in GitHub annotation format. The display mismatch is a candidate explanation for CI's missed click, not a confirmed native-Chrome root cause: the next full Chrome/PostgreSQL 16 CI run must establish whether this correction clears the failure.
+
 ## Sprint 2 (October 15, 2026)
 
 All checks were run on `main` at `1f7fa94` (PR #25, the latest `main` as of this record). They ran in a clean clone, using the same commands as [CI](../.github/workflows/ci.yml).
