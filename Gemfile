@@ -20,7 +20,7 @@ gem "stimulus-rails"
 # gem "redis", ">= 4.0.1"
 
 # Sign in with Google (TAMU accounts) [https://github.com/zquestz/omniauth-google-oauth2]
-gem "omniauth", "~> 2.1"
+gem "omniauth", "~> 2.3"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-rails_csrf_protection", ">= 1.0"
 
