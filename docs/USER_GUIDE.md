@@ -34,6 +34,8 @@ Members see the tasks assigned to them. Officers see their own team's tasks; the
 
 Your filters stay applied when you move between the board, My Tasks and the Timeline. A member's board first opens on their own team and subteam.
 
+For leaders, **Member** is searchable: click or Tab into it to browse, then type part of a name (capitalization does not matter). Click a result or use the arrow keys and Enter to choose it, then select **Apply**. The list scrolls without expanding the page. Choose **All members**, erase the field, or use **Clear member filter** to remove only that filter; select **Apply** to update the results. Escape cancels an unselected search and keeps the previous member.
+
 ## Update task status
 
 1. Open a task assigned to you.
