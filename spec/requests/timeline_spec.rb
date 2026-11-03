@@ -89,7 +89,8 @@ RSpec.describe "Task timeline", type: :request do
           # Monday Aug 3 through Sunday Dec 20, 2026: 20 weeks.
           expect([ gantt["data-from"], gantt.css("[data-day]").size ]).to eq([ "2026-08-03", 140 ])
           expect(row_for(tasks(:spar_check)).at_css("[data-bar]").to_h).to include("data-offset" => "2", "data-clipped-start" => "false")
-          expect(row_for(tasks(:wing_test)).at_css("[data-bar]").to_h).to include("data-clipped-end" => "false")
+          # Sept 28 through Dec 16 is drawn in full: 80 days, starting 56 days in.
+          expect(row_for(tasks(:wing_test)).at_css("[data-bar]").to_h).to include("data-offset" => "56", "data-span" => "80")
      end
 
      it "ignores the old paging parameters" do
