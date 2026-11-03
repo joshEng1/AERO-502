@@ -89,9 +89,9 @@ The task board doubles as the leader dashboard described in the acceptance tests
 ### Timeline
 
 1. Select **Timeline**. Each task is a bar from its start date to its due date, grouped by team and subteam. Gray is Backlog, blue is In progress, green is Completed, and red stripes mean overdue. The red vertical line is today.
-2. Choose how many weeks to **Show** and use the search, team and subteam filters, then select **Apply**.
+2. Use the search, team and subteam filters, then select **Apply**. The chart covers every task shown, from the earliest start date to the latest due date.
 3. Select **Download timeline CSV** to save the task rows represented by the filtered chart, including the start and due dates. Rows marked Earlier or Later are included, as they are in the readable date list.
-4. Use **‹ Previous**, **This week** and **Next ›** to move through time. A task outside the shown weeks says "Earlier" or "Later" on its row.
+4. Scroll the chart sideways (with a trackpad, Shift + mouse wheel, or the arrow keys after selecting the chart) to see earlier and later dates; task names stay in view. The chart opens at today, and **Jump to today** returns there. Dates more than 26 weeks back or 52 weeks ahead are not drawn; those rows say "Earlier" or "Later".
 5. **Dates as a list** below the chart gives the same start and due dates in text.
 
 ### Teams, subteams and projects

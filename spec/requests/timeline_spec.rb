@@ -24,13 +24,15 @@ RSpec.describe "Task timeline", type: :request do
           expect(subteam.css("[data-gantt-row]").map { |row| row["data-task-id"] }).to eq([ tasks(:wing_test).id.to_s ])
      end
 
-     it "offers 4, 6, 8 or 12 week windows and defaults to 6 weeks" do
+     it "scrolls sideways through one continuous window instead of paging through weeks" do
           sign_in(users(:chief))
           get timeline_path
 
-          options = response.parsed_body.css("#weeks option").map { |option| option.text }
-          expect(options).to eq([ "4 weeks", "6 weeks", "8 weeks", "12 weeks" ])
-          expect(response.parsed_body.at_css("#weeks option[selected]").text).to eq("6 weeks")
+          scroller = response.parsed_body.at_css("[data-gantt-scroll]")
+          expect(scroller.to_h).to include("tabindex" => "0", "role" => "region")
+          expect(scroller.at_css("[data-gantt]")).to be_present
+          expect(response.parsed_body.at_css("[data-scroll-today]")).to be_present
+          expect(response.parsed_body.css("a[data-nav], #weeks")).to be_empty
      end
 
      it "shows a day axis with week headings and a line for today" do
@@ -77,33 +79,39 @@ RSpec.describe "Task timeline", type: :request do
           expect(row_for(tasks(:wing_test)).at_css("[data-bar]")["data-span"]).to eq("12")
      end
 
-     it "moves between date windows and marks tasks that fall outside the window" do
+     it "stretches the window to cover every task's dates" do
           sign_in(users(:chief))
-          get timeline_path(from: "2026-10-07", weeks: "4")
+          tasks(:spar_check).update!(start_date: Date.new(2026, 8, 5))
+          tasks(:wing_test).update!(due_date: Date.new(2026, 12, 16))
+          get timeline_path
 
           gantt = response.parsed_body.at_css("[data-gantt]")
-          expect(gantt["data-from"]).to eq("2026-10-05")
-          expect(gantt.css("[data-day]").size).to eq(28)
-          expect(row_for(tasks(:spar_check)).at_css("[data-bar]")).to be_nil
-          expect(row_for(tasks(:spar_check)).at_css("[data-outside]").text).to include("Earlier")
-          expect(response.parsed_body.at_css("a[data-nav='previous']")["href"]).to include("from=2026-09-07", "weeks=4")
-
-          bar = row_for(tasks(:wing_test)).at_css("[data-bar]")
-          expect(bar.to_h).to include("data-offset" => "0", "data-span" => "1", "data-clipped-start" => "true")
+          # Monday Aug 3 through Sunday Dec 20, 2026: 20 weeks.
+          expect([ gantt["data-from"], gantt.css("[data-day]").size ]).to eq([ "2026-08-03", 140 ])
+          expect(row_for(tasks(:spar_check)).at_css("[data-bar]").to_h).to include("data-offset" => "2", "data-clipped-start" => "false")
+          # Sept 28 through Dec 16 is drawn in full: 80 days, starting 56 days in.
+          expect(row_for(tasks(:wing_test)).at_css("[data-bar]").to_h).to include("data-offset" => "56", "data-span" => "80")
      end
 
-     it "falls back to the default window for unreadable dates or sizes" do
+     it "ignores the old paging parameters" do
           sign_in(users(:chief))
-          get timeline_path(from: "soon", weeks: "99")
+          get timeline_path(from: "2026-10-07", weeks: "4")
 
           gantt = response.parsed_body.at_css("[data-gantt]")
           expect([ gantt["data-from"], gantt.css("[data-day]").size ]).to eq([ "2026-09-21", 42 ])
      end
 
-     it "marks tasks that start after the window as later" do
+     it "limits far-off dates and marks tasks beyond the limits as earlier or later" do
           sign_in(users(:chief))
-          get timeline_path(from: "2026-08-31", weeks: "4")
+          tasks(:spar_check).update!(start_date: Date.new(2025, 1, 6), due_date: Date.new(2025, 1, 10))
+          tasks(:wing_test).update!(start_date: Date.new(2028, 3, 6), due_date: Date.new(2028, 3, 10))
+          get timeline_path
 
+          gantt = response.parsed_body.at_css("[data-gantt]")
+          # 26 weeks before Oct 3, 2026 is in the week of Apr 4; 52 weeks after ends Oct 3, 2027.
+          expect(gantt["data-from"]).to eq("2026-03-30")
+          expect(gantt.css("[data-day]").last.text.squish).to end_with("3")
+          expect(row_for(tasks(:spar_check)).at_css("[data-outside]").text).to include("Earlier")
           expect(row_for(tasks(:wing_test)).at_css("[data-outside]").text).to include("Later")
      end
 
