@@ -1,4 +1,12 @@
-<% content_for :title, "User guide · AERO Task Hub" %>
+<% content_for :title, "#{@administrator_guide ? 'Administrator' : 'User'} guide · AERO Task Hub" %>
+
+<nav class="form-actions" aria-label="Help guides">
+  <%= link_to "User guide", help_path, class: "button button-secondary" %>
+  <% if current_user&.chief_engineer? %>
+    <%= link_to "Administrator guide", help_path(guide: "admin"), class: "button button-secondary" %>
+    <%= link_to "Download restart PDF", restart_guide_path, class: "button button-secondary" %>
+  <% end %>
+</nav>
 
 <article class="panel guide">
   <%= sanitize @guide_html, tags: %w[h1 h2 h3 p ul ol li strong em code pre a table thead tbody tr th td blockquote],

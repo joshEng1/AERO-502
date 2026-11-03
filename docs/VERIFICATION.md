@@ -1,5 +1,77 @@
 # Verification record
 
+For the subsequent successful CI runs, Heroku v23 transfer and user-confirmed Google sign-in, see [the operational handover record](SPRINT3_HANDOVER.md). The dated investigation entries below remain historical evidence; their pending items describe the state at that point.
+
+## Browser synchronization follow-up (November 3, 2026)
+
+[CI run 41568791065](https://github.com/joshEng1/AERO-502/actions/runs/41568791065), commit `a46e6dd`, ran 251 examples with one failure in the searchable Member filter system test. Chrome 156.0.8078.47 reported `Node with given id does not belong to the document` as Selenium `UnknownError` while Capybara checked an element's disabled state. The preceding run reported the same error in the member assignment system test. Lint and both security scans passed; line and branch coverage remained 100%.
+
+This matches the navigation error described in [Capybara issue 2850](https://github.com/teamcapybara/capybara/issues/2850). A test-only compatibility module now classifies that specific error through Capybara's existing stale-element recovery policy. Capybara retains its normal element reload, configured wait limit and caller-specified retry exclusions. The original exception still propagates when the wait expires; unrelated errors are not reclassified. Existing browser examples and assertions are unchanged.
+
+An isolated Ruby 4.0.0 WebAssembly harness loaded Capybara 3.40.0's actual synchronization and timer code plus Selenium 4.49.0's error classes, with a minimal session adapter. The unchanged code reproduced immediate failure; the patched code passed seven checks covering recovery, bounded persistent failure, unrelated errors, application errors, caller exclusions, ordinary stale-element recovery and zero-wait behavior. Both new Ruby files passed syntax checks. Six RSpec regression examples were added to exercise the same policies with a real Capybara session without starting a browser.
+
+The full Rails/PostgreSQL/Chrome suite and RuboCop have not been run locally for this correction. A new native GitHub CI run must pass before PR #36 is merged; these isolated checks do not establish full application or customer UAT acceptance.
+
+## Sprint 3 approved design (November 2, 2026)
+
+Local implementation on `codex/sprint-3-approved-design`, based on `origin/dev` at `4b07387`. The approved Notebook v3 / Revision 6 and UAT v3 control this revision. See [story traceability and migration design](SPRINT3_STORIES_VERIFICATION.md). The Sprint 1/2 evidence below is preserved from `origin/main`; those historical results describe their stated commits.
+
+| Check | Observed result |
+| --- | --- |
+| Baseline before changes | Unchanged `dev`: 213 examples, 0 failures; 100% line and branch coverage |
+| Final selected RSpec suite | **249 examples, 0 failures**, seed 51635, 70.75 seconds |
+| SimpleCov | **100% lines (1083/1083)** and **100% branches (394/394)**; existing gates unchanged |
+| Browser regression | Real headless Chromium 151; 80 added test members; keyboard search/selection, retained chips, primary contact, validation recovery, completed-column save and 390-pixel mobile layout passed |
+| Style | RuboCop: 124 files, no offenses |
+| Security | Brakeman 8.1.0: 0 errors and 0 security warnings |
+| JavaScript dependency audit | `bin/importmap audit`: no vulnerable packages found |
+| Migration | Previous schema/data migration and reconciliation failures tested; retained task/current-assignment IDs, actors, initial/status history, assignment periods, references and hours verified |
+| Direct database writes | Membership/ownership, active and primary uniqueness, paired ending times, immutable history, status attribution/order, cross-team and circular prerequisite rejection passed |
+| SQL schema load | `db/structure.sql` loaded successfully using psql 16.15 into a new PGlite database; after reconnecting, practice seeds and the recovery manifest succeeded (3 tasks, 4 assignment periods, 3 initial status rows, 7 actual hours) |
+| Restart PDF | Two-page fillable PDF rendered and visually checked; exact hosting/support fields remain blank pending confirmed values |
+
+Environment: Ubuntu 24.04 workspace, Ruby 4.0.6, Bundler 4.0.16, locked dependencies, and **PGlite / PostgreSQL 18.6 semantics** through its PostgreSQL socket adapter. This environment cannot run a normal PostgreSQL server as a non-root account. Its single-session connection multiplexing requires prepared statements disabled and a fresh connection after psql's schema-load session. These are local harness accommodations; the application and CI retain normal PostgreSQL configuration.
+
+The local suite used `bundle exec rspec --tag ~postgres_concurrency`. Exactly one additional independent-session concurrency test is excluded locally: PGlite cannot establish that property. CI runs plain `bundle exec rspec` against native **PostgreSQL 16**, including that test. The initial local run did not verify native PostgreSQL concurrency or release deployment; the later native CI result is recorded below. A local 100% coverage result does not imply that excluded test or customer UAT has passed.
+
+The final style/security commands were `bundle exec rubocop`, `bundle exec brakeman --no-pager` and `bundle exec ruby bin/importmap audit`. No production database was connected, migrated or restored. Google tests use OmniAuth test mode; real OAuth configuration, staging migration against the real backup, Heroku restart/recovery, training, offline-PDF delivery and customer acceptance must be recorded in [SPRINT3_HANDOVER.md](SPRINT3_HANDOVER.md).
+
+### CI follow-up after the `test` upload
+
+[CI run 41403959885](https://github.com/joshEng1/AERO-502/actions/runs/41403959885) tested uploaded commit `1a08530`. Lint and both security scans passed. RSpec ran 250 examples with two failures, while retaining 100% line and branch coverage. The uploaded workflow used an unpinned PostgreSQL image; the configuration correction restores PostgreSQL 16.
+
+- The concurrency test failed before opening its extra sessions because unfiltered `conninfo_hash` passed an empty service setting to libpq. Removing blank settings reproduced-and-resolved this connection error locally; both connection/query checks succeeded. Opened connections are also retained for cleanup if a later connection attempt fails. The actual independent-session race still requires the next native PostgreSQL CI run.
+- The browser check found the selector options in the DOM but reported them as hidden. A new regression reproduced the dropdown opening below the viewport when the search field sits at its bottom edge. Opening now scrolls the bounded dropdown into view. The test checks the open state, visible dropdown and first choice, and counts all 82 available choices including scrolled-out rows; keyboard selection, retained choices, primary contact, error recovery and mobile checks remain enforced. CI also retains browser screenshots for diagnosis.
+- After the fixes, the local suite with the original CI seed (`60876`) passed **249 examples, 0 failures**, with **1083/1083 lines and 394/394 branches covered**. This used PGlite and headless Chrome **156.0.8078.80**; only the native concurrency test was excluded. RuboCop inspected 124 files with no offenses. These results do not claim that the next CI run has passed.
+
+### Remaining browser failure and pointer focus correction
+
+[CI run 41406456761](https://github.com/joshEng1/AERO-502/actions/runs/41406456761), commit `b207ff2`, ran **250 examples with one failure**, seed `46194`. The supplied output confirms that the independent-session ownership concurrency test now passes against PostgreSQL 16. The remaining failure is the member selector's closed `aria-expanded` state after a click. Ruby coverage remained **1083/1083 lines and 394/394 branches**.
+
+Local event tracing found that the focus handler scrolled the list into view while the mouse button was still down: the search field moved **230 pixels**, so pointer release landed elsewhere. A regression that holds the mouse button and checks the field's position failed before the correction. Pointer interactions now open and scroll the list on the completed click; keyboard focus still opens it immediately. The regression passes after this change, along with ordinary clicking, closing on focus leaving the selector, Tab/Shift+Tab reopening, keyboard search and multiple selection, error recovery, task saving and mobile opening. No visibility assertion or coverage gate was removed.
+
+The corrected local suite passed **249 examples, 0 failures**, seed `46194`, in **70.49 seconds**, with **100% line and branch coverage**. This run used `CI=true`, PGlite and Chrome Headless Shell **156.0.8078.80**; only the native concurrency test was excluded. RuboCop inspected **124 files with no offenses**. The exact closed-state failure has not been reproduced under Headless Shell, so a fresh full Chrome/PostgreSQL 16 CI run is still required to confirm the remaining CI failure is resolved. Deployment and customer UAT remain pending.
+
+### Browser display configuration follow-up
+
+[CI run 41408961903](https://github.com/joshEng1/AERO-502/actions/runs/41408961903), commit `181dfeb`, correctly included the pointer correction. The supplied output reports **250 examples, one failure**, seed `6472`, with **100% line and branch coverage**. The system test stopped at the focus assertion while the mouse button was still held, before checking the completed click. Lint and both security scans passed.
+
+An isolated browser probe and the application test measured a **1280x1000 window on an 800x600 virtual screen** under the existing launch configuration. Rails applies `screen_size` by resizing the window after Chrome starts. Chrome's virtual screen has separate [launch configuration](https://developer.chrome.com/docs/automation-and-testing/headless-screen-config). The test now launches a **1600x1200 virtual screen**, starts its window at **1280x1000 at origin 0,0**, and checks that the display contains the window. This new check failed with the old settings and passes with the corrected settings.
+
+The field-position assertion remains active while the mouse is pressed; focus and dropdown opening are checked after the completed click. Ordinary clicks, keyboard navigation, selected members, mobile opening and saving remain enforced. On failure, the test emits an escaped GitHub error annotation containing the exception, browser version, display/window/viewport sizes, input bounds, hit target, active element and the last 20 pointer/focus events. The annotation uses synthetic test data and can be read through the public checks API; it avoids needing another screenshot just to identify the failing event.
+
+The local suite passed **249 examples, 0 failures**, seed `6472`, in **70.42 seconds**, with **1083/1083 lines and 394/394 branches covered**. RuboCop inspected **124 files with no offenses**. This used PGlite and Chrome Headless Shell **156.0.8078.80**, with `CI=true` and `GITHUB_ACTIONS=true`; the native concurrency test remains excluded locally and previously passed in CI. The failing-configuration run also verified that browser diagnostics are emitted in GitHub annotation format. The display mismatch is a candidate explanation for CI's missed click, not a confirmed native-Chrome root cause: the next full Chrome/PostgreSQL 16 CI run must establish whether this correction clears the failure.
+
+### Native Chrome click delivery investigation
+
+[CI run 41410706911](https://github.com/joshEng1/AERO-502/actions/runs/41410706911), commit `33c6c95`, still failed the selector's focus assertion. The public diagnostic annotation confirms the corrected **1600x1200 screen**, **1280x1000 window**, **1280x857 viewport**, an enabled input with `pointer-events: auto`, a correct center hit target, and `document.hasFocus() == true`. However, **no pointer, mouse or focus events reached the document**, and the active element remained `BODY`. Thus the screen correction did not resolve the missing click. Lint and both security scans passed. This evidence does not establish a specific browser dialog or driver defect as the cause.
+
+The next test-profile change turns off Chrome credential saving and credential-leak prompts only in the disposable Selenium profile used with synthetic accounts. Browser-owned password prompts are a [reported cause of interrupted Selenium tests](https://github.com/selenide/selenide/discussions/2658); this remains a hypothesis for this run. Application authentication and browser assertions are unchanged.
+
+If another failure has no received events, diagnostics now preserve its original screenshot, record full browser/driver versions, try a native Escape followed by another native click, and then try a centered native click after two animation frames if needed. These are failure-only probes: they never retry or convert the failed example to a pass. Their results and any probe error are included alongside the original failure in the GitHub annotation.
+
+Local verification passed **249 examples, 0 failures**, seed `6472`, in **70.88 seconds**, with **1083/1083 lines and 394/394 branches covered**. RuboCop inspected **124 files with no offenses**. A separate intentionally failing scratch example verified that the original failure and native-click probe results are both retained. These checks used PGlite and Chrome Headless Shell **156.0.8078.80**; they do **not** reproduce or resolve the full-Chrome CI failure. Native CI confirmation remains required.
+
 ## Sprint 2 (October 15, 2026)
 
 All checks were run on `main` at `1f7fa94` (PR #25, the latest `main` as of this record). They ran in a clean clone, using the same commands as [CI](../.github/workflows/ci.yml).
@@ -37,8 +109,8 @@ Since Sprint 1: 45 → 169 examples, line coverage 216 → 630 lines (still 100%
 | KAN-21 | Search plus team and subteam filters | Only matching permitted tasks are shown | ☀ [task_search_filter_spec.rb:13](../spec/requests/task_search_filter_spec.rb#L13), [:25](../spec/requests/task_search_filter_spec.rb#L25) | Pass |
 | KAN-21 | Search for another team's restricted task | Never shown | ☂ [task_search_filter_spec.rb:44](../spec/requests/task_search_filter_spec.rb#L44) | Pass |
 | KAN-23 | Timeline bars | Each task's bar runs from start to due date, grouped by team and subteam | ☀ [timeline_spec.rb:11](../spec/requests/timeline_spec.rb#L11) | Pass |
-| KAN-23 | Unreadable dates or window size | Falls back to the default 6-week window | ☂ [timeline_spec.rb:95](../spec/requests/timeline_spec.rb#L95) | Pass |
-| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:110](../spec/requests/timeline_spec.rb#L110) | Pass |
+| KAN-23 | Schedule longer than the screen | One continuous chart covers every task's dates and scrolls sideways; tasks beyond 26 weeks back or 52 weeks ahead are marked Earlier or Later | ☀ [timeline_spec.rb:82](../spec/requests/timeline_spec.rb#L82), ☂ [timeline_spec.rb:104](../spec/requests/timeline_spec.rb#L104) | Pass |
+| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:118](../spec/requests/timeline_spec.rb#L118) | Pass |
 | KAN-24 | Task estimate vs. actual hours | Task states the difference ("over/under estimate") | ☀ [planned_vs_actual_spec.rb:16](../spec/requests/planned_vs_actual_spec.rb#L16) | Pass |
 | KAN-24 | Negative estimate | Rejected; zero is accepted | ☂ [planned_vs_actual_spec.rb:5](../spec/requests/planned_vs_actual_spec.rb#L5) | Pass |
 | KAN-25 | Allowed email signs in with Google | Signed in with the assigned role and team, ignoring letter case | ☀ [google_sign_in_spec.rb:24](../spec/requests/google_sign_in_spec.rb#L24) | Pass |

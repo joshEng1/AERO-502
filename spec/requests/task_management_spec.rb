@@ -79,7 +79,7 @@ RSpec.describe "Task management", type: :request do
           expect(tasks(:wing_test).assignees).to include(users(:member))
      end
 
-     it "lets chief engineers open cross-team forms and delete a new task without history" do
+     it "lets chief engineers open cross-team forms and preserve the initial history of a new task" do
           sign_in_as(:chief)
           get edit_task_path(tasks(:spar_check))
           expect(response).to have_http_status(:ok)
@@ -87,7 +87,7 @@ RSpec.describe "Task management", type: :request do
                               estimated_hours: 0, project: projects(:aero), creator: users(:chief))
           expect do
                delete task_path(task)
-          end.to change(Task, :count).by(-1)
-          expect(response).to redirect_to(tasks_path)
+          end.not_to change(Task, :count)
+          expect(response).to redirect_to(task_path(task))
      end
 end

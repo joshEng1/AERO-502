@@ -12,7 +12,7 @@ module TaskFiltering
      def task_filter
           @task_filter ||= begin
                if params[:filter].present?
-                    session[:task_filters] = TaskFilter.new(params[:filter].permit(*TaskFilter::KEYS)).to_h
+                    session[:task_filters] = TaskFilter.new(params[:filter].permit(*TaskFilter::KEYS, team_ids: [], project_ids: [])).to_h
                end
                TaskFilter.new(session[:task_filters] || default_task_filters)
           end

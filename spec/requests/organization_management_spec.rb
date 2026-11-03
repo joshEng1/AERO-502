@@ -14,7 +14,7 @@ RSpec.describe "Organization management", type: :request do
      end
 
      def create_project(name, subteam)
-          post projects_path, params: { project: { name: name, subteam_id: subteam.id } }
+          post projects_path, params: { project: { name: name, team_id: subteam.team_id, subteam_ids: [ subteam.id ] } }
           subteam.projects.find_by!(name: name)
      end
 
@@ -54,8 +54,8 @@ RSpec.describe "Organization management", type: :request do
           expect { post subteams_path, params: { subteam: { name: "Wings", team_id: "" } } }.not_to change(Subteam, :count)
           expect(response.parsed_body.at_css("#subteam_team_error").text).to include("Team must exist")
 
-          expect { post projects_path, params: { project: { name: "Ribs", subteam_id: "" } } }.not_to change(Project, :count)
-          expect(response.parsed_body.at_css("#project_subteam_error").text).to include("Subteam must exist")
+          expect { post projects_path, params: { project: { name: "Ribs", team_id: "", subteam_ids: [] } } }.not_to change(Project, :count)
+          expect(response.parsed_body.at_css("#project_team_error").text).to include("Team must exist")
      end
 
      it "B1.5/B1.8: keeps a new subteam under its team after refreshing and offers its projects in the task form" do
@@ -69,7 +69,7 @@ RSpec.describe "Organization management", type: :request do
 
           get new_task_path
           expect(response.parsed_body.css("#task_project_id option").map(&:text))
-               .to include("Aerodynamics · Propulsion · Motor test")
+               .to include("Aerodynamics · Motor test")
      end
 
      it "B1.7: renames and archives records; archived ones leave everyday lists but their tasks and hours stay viewable" do
@@ -113,7 +113,7 @@ RSpec.describe "Organization management", type: :request do
 
           expect { post subteams_path, params: { subteam: { name: "Sneaky", team_id: teams(:structures).id } } }
                .not_to change(Subteam, :count)
-          expect { post projects_path, params: { project: { name: "Sneaky", subteam_id: subteams(:airframe).id } } }
+          expect { post projects_path, params: { project: { name: "Sneaky", team_id: teams(:structures).id, subteam_ids: [ subteams(:airframe).id ] } } }
                .not_to change(Project, :count)
           patch subteam_path(subteams(:airframe)), params: { subteam: { name: "Hijacked" } }
           patch archive_project_path(projects(:airframe_build))
@@ -148,7 +148,7 @@ RSpec.describe "Organization management", type: :request do
           patch project_path(projects(:aero)), params: { project: { subteam_id: subteams(:airframe).id } }
           patch subteam_path(subteams(:wing)), params: { subteam: { team_id: teams(:structures).id } }
 
-          expect(projects(:aero).reload.subteam).to eq(subteams(:wing))
+          expect(projects(:aero).reload.subteams).to include(subteams(:wing))
           expect(subteams(:wing).reload.team).to eq(teams(:aerodynamics))
      end
 
@@ -158,8 +158,8 @@ RSpec.describe "Organization management", type: :request do
           expect(response.body).to include("Aerodynamics", "Wing Analysis")
           expect(response.body).not_to include("Airframe")
           get new_project_path
-          expect(response.parsed_body.css("#project_subteam_id option").map(&:text))
-               .to eq([ "Select a subteam", "Aerodynamics · Wing Analysis" ])
+          expect(response.parsed_body.css("#project_team_id option").map(&:text))
+               .to eq([ "Select a team", "Aerodynamics" ])
           get new_subteam_path
           expect(response.parsed_body.css("#subteam_team_id option").map(&:text)).to eq([ "Select a team", "Aerodynamics" ])
 
@@ -191,7 +191,7 @@ RSpec.describe "Organization management", type: :request do
 
           patch user_path(users(:member)), params: { user: { subteam_id: subteams(:airframe).id } }
           expect(response).to have_http_status(:unprocessable_content)
-          expect(response.body).to include("Subteam must belong to the person&#39;s team")
+          expect(response.body).to include("cannot change teams until incompatible active assignments are resolved")
      end
 
      it "seeds the SAE AERO classes, their subteams and starter projects" do
@@ -206,6 +206,6 @@ RSpec.describe "Organization management", type: :request do
                "Micro Class" => [ "Aerodynamics", "Structures" ],
                "Advanced Class" => [ "Aerodynamics", "Autonomous Systems", "Structures" ]
           )
-          expect(Task.find_by!(title: "Wing load test").project.subteam.name).to eq("Aerodynamics")
+          expect(Task.find_by!(title: "Wing load test", project: Project.find_by!(name: "Wing design")).subteams.order(:name).first.name).to eq("Aerodynamics")
      end
 end

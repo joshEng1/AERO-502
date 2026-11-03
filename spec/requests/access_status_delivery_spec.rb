@@ -15,7 +15,6 @@ RSpec.describe "KAN-7, KAN-9, and KAN-12 delivered access and status", type: :re
                due_date: Date.new(2026, 10, 20),
                status: :backlog,
                project: projects(:aero),
-               team: teams(:aerodynamics),
                creator: users(:officer)
           )
      end

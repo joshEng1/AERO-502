@@ -1,7 +1,11 @@
 wing_member:
   task: wing_test
   user: member
+  assigned_by: officer
+  assigned_at: 2026-09-02 12:00:00
 
 spar_member:
   task: spar_check
   user: other_member
+  assigned_by: other_officer
+  assigned_at: 2026-09-02 12:00:00

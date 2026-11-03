@@ -5,8 +5,11 @@
 # docs specs when run under WSL or Linux. Git still detects binary files.
 * text=auto eol=lf
 
+# PDF streams must not be normalized as text, including fillable forms.
+*.pdf binary
+
 # Mark the database schema as having been generated.
-db/schema.rb linguist-generated
+db/structure.sql linguist-generated
 
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored

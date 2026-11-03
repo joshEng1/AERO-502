@@ -25,17 +25,19 @@ class SessionsController < ApplicationController
      def omniauth
           auth = request.env["omniauth.auth"]
           verified = auth.dig("extra", "raw_info", "email_verified")
-          user = allowed_user(auth.dig("info", "email")) if verified
+          user = allowed_user(auth.dig("info", "email")) if verified == true
 
           if user
                start_session(user)
           else
+               reset_session
                redirect_to login_path, alert: "Access not authorized. Ask the Chief Engineer to add your email " \
                                               "to the allowed people list."
           end
      end
 
      def failure
+          reset_session
           redirect_to login_path, alert: "Google sign-in was cancelled or failed. Please try again."
      end
 

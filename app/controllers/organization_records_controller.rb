@@ -10,7 +10,7 @@ class OrganizationRecordsController < ApplicationController
      helper_method :parent_field, :parent_options, :record_label
 
      def show
-          @tasks = @record.tasks.includes(:time_entries, project: { subteam: :team }).order(:due_date, :title)
+          @tasks = @record.tasks.includes(:time_entries, project: :team).order(:due_date, :title)
           render "organization/record"
      end
 

@@ -1,12 +1,12 @@
 require "rails_helper"
 
 RSpec.describe Task, type: :model do
-     it "takes its subteam and team from its project, whatever else was set" do
+     it "derives its team from its project and subteams from active assignees" do
           task = tasks(:wing_test)
-          task.assign_attributes(subteam: subteams(:airframe), team: teams(:structures))
-
-          expect(task).to be_valid
-          expect([ task.subteam, task.team ]).to eq([ subteams(:wing), teams(:aerodynamics) ])
+          expect(task.project).to eq(projects(:aero))
+          expect(task.subteams).to contain_exactly(subteams(:wing))
+          expect(task.team).to eq(teams(:aerodynamics))
+          expect(Task.column_names).not_to include("project_subteam_id", "team_id", "subteam_id")
      end
 
      it "calculates member hours consistently with preloaded entries" do
@@ -58,7 +58,7 @@ RSpec.describe Task, type: :model do
 
           expect(task.reference_links_text).to eq("https://example.com/wing")
           task.update!(title: "Renamed wing test")
-          expect(task.reload.links.map(&:url)).to eq([ "https://example.com/wing" ])
+          expect(task.reload.reference_urls).to eq([ "https://example.com/wing" ])
      end
 
      it "defaults the start date to today and requires a due date on or after it" do

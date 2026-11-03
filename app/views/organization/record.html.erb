@@ -5,7 +5,7 @@
     <p class="eyebrow"><%= record_label.upcase %></p>
     <h1><%= @record.name %></h1>
     <% unless @record.is_a?(Team) %>
-      <p class="lede" data-parents><%= @record.is_a?(Project) ? @record.subteam.full_name : @record.team.name %></p>
+      <p class="lede" data-parents><%= @record.is_a?(Project) ? "#{@record.team.name} · #{@record.subteams.map(&:name).sort.join(", ")}" : @record.team.name %></p>
     <% end %>
   </div>
   <%= link_to "Back to teams", organization_path, class: "button button-secondary" %>
@@ -53,3 +53,5 @@
     <p class="muted">No tasks are recorded here.</p>
   <% end %>
 </section>
+
+<%= render "subteams/roster" if @record.is_a?(Subteam) %>

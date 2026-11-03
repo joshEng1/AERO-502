@@ -13,6 +13,7 @@ Rails.application.routes.draw do
      get "auth/:provider/callback", to: "sessions#omniauth", as: :omniauth_callback
      get "auth/failure", to: "sessions#failure"
      get "help", to: "help#show"
+     get "help/restart", to: "help#restart", as: :restart_guide
 
      resources :users, only: %i[index new create edit update] do
           member do
@@ -29,6 +30,12 @@ Rails.application.routes.draw do
           end
      end
      resources :teams, :subteams, :projects, only: %i[show new create edit update], concerns: :archivable
+
+     get "reports/member_hours", to: "reports#member_hours", as: :member_hours_report
+     get "reports/project_hours", to: "reports#project_hours", as: :project_hours_report
+     resources :subteams, only: [] do
+          resource :roster, only: %i[update destroy], controller: "rosters"
+     end
 
      resources :tasks do
           resources :time_entries, only: %i[create edit update destroy], shallow: true

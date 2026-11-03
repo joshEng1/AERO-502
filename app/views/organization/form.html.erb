@@ -27,6 +27,8 @@
     <%= field_error(@record, :name) %>
   </div>
 
+  <% if @record.errors.any? %><div class="error-summary" role="alert"><%= @record.errors.full_messages.to_sentence %></div><% end %>
+
   <div class="form-actions">
     <%= form.submit "Save #{record_label.downcase}", class: "button" %>
     <%= link_to "Cancel", organization_path, class: "button button-secondary" %>
