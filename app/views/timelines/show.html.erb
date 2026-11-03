@@ -13,27 +13,20 @@
   <%= fields :filter do |filter_form| %>
     <%= render "tasks/filter_fields", form: filter_form %>
   <% end %>
-  <div class="field gantt-weeks-field">
-    <%= form.label :weeks, "Show" %>
-    <%= form.select :weeks, TaskTimeline::WEEK_OPTIONS.map { |count| [ "#{count} weeks", count ] }, selected: timeline.weeks %>
-  </div>
-  <%= hidden_field_tag :from, timeline.from, id: nil %>
   <div class="filter-actions">
     <%= form.submit "Apply", class: "button", name: nil %>
-    <%= link_to "Clear", timeline_path(filter: { q: "" }, weeks: timeline.weeks), class: "button button-secondary" %>
+    <%= link_to "Clear", timeline_path(filter: { q: "" }), class: "button button-secondary" %>
   </div>
 <% end %>
 
-<p><%= link_to "Download timeline CSV", timeline_path(format: :csv, filter: task_filter.to_h, from: timeline.from, weeks: timeline.weeks), class: "button button-secondary" %></p>
+<p><%= link_to "Download timeline CSV", timeline_path(format: :csv, filter: task_filter.to_h), class: "button button-secondary" %></p>
 
 <section class="panel gantt-panel" aria-labelledby="gantt-heading">
   <div class="gantt-toolbar">
     <h2 id="gantt-heading"><%= timeline.from.to_fs(:long) %> – <%= timeline.to.to_fs(:long) %></h2>
-    <div class="gantt-nav">
-      <%= link_to "‹ Previous", timeline_path(from: timeline.previous_from, weeks: timeline.weeks), class: "button button-secondary button-small", data: { nav: "previous" } %>
-      <%= link_to "This week", timeline_path(weeks: timeline.weeks), class: "button button-secondary button-small", data: { nav: "today" } %>
-      <%= link_to "Next ›", timeline_path(from: timeline.next_from, weeks: timeline.weeks), class: "button button-secondary button-small", data: { nav: "next" } %>
-    </div>
+    <% if timeline.today_offset && timeline.tasks.any? %>
+      <button type="button" class="button button-secondary button-small" data-scroll-today hidden>Jump to today</button>
+    <% end %>
   </div>
 
   <ul class="gantt-legend" aria-label="Legend">
@@ -47,7 +40,8 @@
   <% if timeline.tasks.empty? %>
     <p class="muted">No tasks match these filters.</p>
   <% else %>
-    <div class="gantt-scroll" tabindex="0" role="region" aria-label="Scrollable task timeline">
+    <p class="muted panel-note">Scroll sideways to see earlier and later dates. Task names stay in view.</p>
+    <div class="gantt-scroll" data-gantt-scroll tabindex="0" role="region" aria-label="Timeline chart. Scroll sideways for more dates.">
       <div class="gantt" data-gantt data-from="<%= timeline.from.iso8601 %>" style="--days: <%= timeline.days.size %>">
         <div class="gantt-head">
           <div class="gantt-corner">Task</div>

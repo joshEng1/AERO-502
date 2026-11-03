@@ -1,31 +1,42 @@
 # Heroku deployment guide
 
-Canvas requires the Sprint 1 increment in the customer's Heroku account. Deployment ownership and billing must remain with the organization.
+## Current deployment
 
-## First deployment
+- App: `aero-task-hub` (formerly `sleepy-depths-47724`).
+- Website: https://aero-task-hub-b5f4953964ed.herokuapp.com/
+- Repository: https://github.com/joshEng1/AERO-502
+- Recorded release: `v23`, commit `2e4df57e136076beccb2eeb534b07183500aa280`.
+- Heroku owner observed: Joshua's account. JD's ownership transfer remains pending.
+- Database: `postgresql-convex-72612`; Postgres Essential-0, version reported as 18.4.
+- `sleepy-bayou-60650` was paused as a fallback. Its deletion has not been confirmed.
 
-1. Have the Chief Engineer or authorized organization owner create the Heroku application.
-2. Add Heroku Postgres to the application.
-3. Connect `https://github.com/joshEng1/AERO-502` in the Heroku app's Deploy tab.
-4. Select `main` for production and enable automatic deploys only with **Wait for CI to pass before deploy** enabled. Use a separately provisioned practice app for the reviewed Sprint 3 branch; do not assume the older `test` branch contains Sprint 3.
-5. Set `RAILS_MASTER_KEY` from `config/master.key` through Heroku Config Vars. Do not commit or paste it into documentation.
-6. Set `DEMO_PASSWORD` to an approved practice password shared separately with testers.
-7. Deploy the reviewed `main` commit. The `release` Procfile command runs `bin/rails db:migrate`.
-8. On the separate practice app only, run `heroku run bin/rails db:seed -a PRACTICE_APP` for agreed practice records. Follow the Sprint 3 migration preflight in ADMIN_GUIDE.md for an existing database.
-9. Open `https://APP_NAME.herokuapp.com/up`, then perform the role and task smoke tests.
-10. Record the application URL, commit SHA, Heroku owner, add-ons, and current recurring price in the project notebook.
+The recorded release came from `test`. Reconcile it through reviewed PRs and restore the normal feature → dev → test → main flow. Keep automatic deployments from older `main` disabled until it contains the approved release. Verify the actual Heroku Deploy settings; this guide does not claim that they were changed.
 
-Pricing changes over time. Capture the active plan and recurring cost from the organization's Heroku dashboard at submission time; do not rely on an old price copied into this repository.
+## Configuration
 
-## Required environment
+The app uses `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a private `SECRET_KEY_BASE`. `RAILS_MASTER_KEY` is needed if encrypted credentials are used; it was absent in the successful deployment. Heroku supplies the database URL. Do not copy a database URL between apps. `PASSWORD_SIGN_IN` remains enabled until the organization approves Google-only operation after testing all roles.
 
-- Ruby 4.0.6
-- PostgreSQL through `DATABASE_URL`
-- `RAILS_MASTER_KEY`
-- Optional `DEMO_PASSWORD`
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google sign-in (see `ADMIN_GUIDE.md`)
-- Optional `PASSWORD_SIGN_IN=off` once everyone signs in with Google
+The exact Google authorized redirect URI for this app is:
 
-## Data decision
+```text
+https://aero-task-hub-b5f4953964ed.herokuapp.com/auth/google_oauth2/callback
+```
 
-The seed file contains practice records only. Importing real organization records is not part of Sprint 1 unless the customer explicitly approves a separate transfer plan.
+Edit the same OAuth client whose ID is configured on this app. After saving, start a new sign-in from the website. OAuth success still requires an approved, non-revoked People record. Do not commit credentials or paste their values into an issue, guide or screenshot.
+
+## Future release procedure
+
+1. Complete code review and CI on the exact intended release commit. Confirm the repository and Heroku app before pushing.
+2. Record the currently deployed release and capture and download a database backup. Verify successful backup completion.
+3. For schema changes, rehearse against a distinct restored test database and follow `ADMIN_GUIDE.md`. The approved migration stops when real history or memberships need reconciliation; do not fabricate attribution.
+4. Deploy only that reviewed commit to `https://git.heroku.com/aero-task-hub.git`. The Procfile release phase runs `bin/rails db:migrate`; confirm that the release succeeded before serving traffic.
+5. Check `/up`, Google sign-in with approved roles, denied/revoked access, the task board, the searchable Member filter, a task and its history, and the recorded hour totals.
+6. Record release, commit, operator, backup and observed results in the handover record.
+
+Do not rerun the completed database transfer during ordinary code review or deployment. Do not seed the live database. A code rollback does not restore database records or reverse this migration; recovery needs compatible code and a separately verified backup.
+
+## Remaining operational work
+
+Verify backup frequency, retention, storage and responsible people; complete the controlled restart and isolated recovery exercise; deliver the filled offline PDF; train JD and record feedback; finish customer UAT and ownership transfer. Retire the paused fallback only after final-app checks and retained backups are confirmed.
+
+References: [Heroku release phase](https://devcenter.heroku.com/articles/release-phase), [PGBackups](https://devcenter.heroku.com/articles/heroku-postgres-backups), [Google redirect URI matching](https://developers.google.com/identity/protocols/oauth2/web-server).

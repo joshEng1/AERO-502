@@ -1,5 +1,17 @@
 # Verification record
 
+For the subsequent successful CI runs, Heroku v23 transfer and user-confirmed Google sign-in, see [the operational handover record](SPRINT3_HANDOVER.md). The dated investigation entries below remain historical evidence; their pending items describe the state at that point.
+
+## Browser synchronization follow-up (November 3, 2026)
+
+[CI run 41568791065](https://github.com/joshEng1/AERO-502/actions/runs/41568791065), commit `a46e6dd`, ran 251 examples with one failure in the searchable Member filter system test. Chrome 156.0.8078.47 reported `Node with given id does not belong to the document` as Selenium `UnknownError` while Capybara checked an element's disabled state. The preceding run reported the same error in the member assignment system test. Lint and both security scans passed; line and branch coverage remained 100%.
+
+This matches the navigation error described in [Capybara issue 2850](https://github.com/teamcapybara/capybara/issues/2850). A test-only compatibility module now classifies that specific error through Capybara's existing stale-element recovery policy. Capybara retains its normal element reload, configured wait limit and caller-specified retry exclusions. The original exception still propagates when the wait expires; unrelated errors are not reclassified. Existing browser examples and assertions are unchanged.
+
+An isolated Ruby 4.0.0 WebAssembly harness loaded Capybara 3.40.0's actual synchronization and timer code plus Selenium 4.49.0's error classes, with a minimal session adapter. The unchanged code reproduced immediate failure; the patched code passed seven checks covering recovery, bounded persistent failure, unrelated errors, application errors, caller exclusions, ordinary stale-element recovery and zero-wait behavior. Both new Ruby files passed syntax checks. Six RSpec regression examples were added to exercise the same policies with a real Capybara session without starting a browser.
+
+The full Rails/PostgreSQL/Chrome suite and RuboCop have not been run locally for this correction. A new native GitHub CI run must pass before PR #36 is merged; these isolated checks do not establish full application or customer UAT acceptance.
+
 ## Sprint 3 approved design (November 2, 2026)
 
 Local implementation on `codex/sprint-3-approved-design`, based on `origin/dev` at `4b07387`. The approved Notebook v3 / Revision 6 and UAT v3 control this revision. See [story traceability and migration design](SPRINT3_STORIES_VERIFICATION.md). The Sprint 1/2 evidence below is preserved from `origin/main`; those historical results describe their stated commits.
@@ -97,8 +109,8 @@ Since Sprint 1: 45 → 169 examples, line coverage 216 → 630 lines (still 100%
 | KAN-21 | Search plus team and subteam filters | Only matching permitted tasks are shown | ☀ [task_search_filter_spec.rb:13](../spec/requests/task_search_filter_spec.rb#L13), [:25](../spec/requests/task_search_filter_spec.rb#L25) | Pass |
 | KAN-21 | Search for another team's restricted task | Never shown | ☂ [task_search_filter_spec.rb:44](../spec/requests/task_search_filter_spec.rb#L44) | Pass |
 | KAN-23 | Timeline bars | Each task's bar runs from start to due date, grouped by team and subteam | ☀ [timeline_spec.rb:11](../spec/requests/timeline_spec.rb#L11) | Pass |
-| KAN-23 | Unreadable dates or window size | Falls back to the default 6-week window | ☂ [timeline_spec.rb:95](../spec/requests/timeline_spec.rb#L95) | Pass |
-| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:110](../spec/requests/timeline_spec.rb#L110) | Pass |
+| KAN-23 | Schedule longer than the screen | One continuous chart covers every task's dates and scrolls sideways; tasks beyond 26 weeks back or 52 weeks ahead are marked Earlier or Later | ☀ [timeline_spec.rb:82](../spec/requests/timeline_spec.rb#L82), ☂ [timeline_spec.rb:104](../spec/requests/timeline_spec.rb#L104) | Pass |
+| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:118](../spec/requests/timeline_spec.rb#L118) | Pass |
 | KAN-24 | Task estimate vs. actual hours | Task states the difference ("over/under estimate") | ☀ [planned_vs_actual_spec.rb:16](../spec/requests/planned_vs_actual_spec.rb#L16) | Pass |
 | KAN-24 | Negative estimate | Rejected; zero is accepted | ☂ [planned_vs_actual_spec.rb:5](../spec/requests/planned_vs_actual_spec.rb#L5) | Pass |
 | KAN-25 | Allowed email signs in with Google | Signed in with the assigned role and team, ignoring letter case | ☀ [google_sign_in_spec.rb:24](../spec/requests/google_sign_in_spec.rb#L24) | Pass |
