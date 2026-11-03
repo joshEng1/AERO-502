@@ -108,6 +108,18 @@ input:focus, select:focus, textarea:focus, a:focus-visible, button:focus-visible
 .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .6rem; }
 .check-option { display: flex; align-items: center; gap: .6rem; padding: .7rem; border: 1px solid var(--line); border-radius: 8px; }
 .check-option input { width: 20px; min-height: 20px; }
+[data-member-selector] [hidden] { display: none; }
+.member-picker { position: relative; display: flex; flex-direction: column; gap: .4rem; }
+.member-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.member-chip { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .3rem .25rem .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--cream); font-weight: 650; }
+.member-chip-remove { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; color: var(--maroon); background: transparent; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.member-chip-remove:hover { background: var(--line); }
+.member-options { position: absolute; z-index: 10; top: 100%; right: 0; left: 0; max-height: 260px; margin: .25rem 0 0; padding: .3rem; overflow-y: auto; border: 1px solid #b9b1a7; border-radius: 7px; background: white; box-shadow: var(--shadow); list-style: none; }
+.member-option { padding: .55rem .7rem; border-radius: 5px; cursor: pointer; }
+.member-option:hover, .member-option.is-active { background: var(--cream); }
+.member-option[aria-selected="true"] { font-weight: 750; }
+.member-option[aria-selected="true"]::before { content: "✓ "; color: var(--green); }
+.member-status:empty, .member-options:empty { display: none; }
 .form-actions { display: flex; gap: .75rem; }
 .subsection-heading { margin-top: 1.75rem; }
 .variance-note { margin: .9rem 0 0; font-weight: 700; color: var(--maroon); }

@@ -19,7 +19,8 @@
   <div class="form-grid">
     <div class="field">
       <%= form.label :project_id, "Project" %>
-      <%= form.collection_select :project_id, @projects, :id, :full_name, { prompt: "Select a project" }, required: true, **field_error_attributes(task, :project) %>
+      <%= form.select :project_id, options_for_select(@projects.map { |project| [ project.full_name, project.id, { data: { team_id: project.team_id } } ] }, task.project_id),
+                      { prompt: "Select a project" }, required: true, **field_error_attributes(task, :project) %>
       <p class="hint">Listed as team · project. Select a participating subteam below. The parent team comes from the project.</p>
       <%= field_error(task, :project) %>
     </div>
@@ -70,12 +71,12 @@
     </div>
   </div>
 
-  <fieldset class="field">
+  <fieldset class="field" data-member-selector>
     <legend>Assigned members</legend>
     <p class="hint">Choose one or more members from the selected team.</p>
-    <div class="check-grid">
+    <div class="check-grid" data-member-options>
       <%= form.collection_check_boxes :assignee_ids, @assignees, :id, :name do |box| %>
-        <%= box.label class: "check-option" do %>
+        <%= box.label class: "check-option", data: { member_name: box.text, team_id: box.object.team_id } do %>
           <%= box.check_box %>
           <span><%= box.text %></span>
         <% end %>

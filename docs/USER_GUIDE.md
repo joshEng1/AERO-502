@@ -64,7 +64,7 @@ You can change only entries you recorded yourself.
 1. Select **New Task**.
 2. Enter a **Title**, then choose the **Project**. Projects are listed as "Team · Project". Select a **Responsible subteam** that participates in that project; the parent team comes from the project. Officers see only their own team's projects.
 3. Enter the **Start date** (today by default), **Due date** and **Estimated hours** (0 or more). Deliverables, work instructions and reference links (one full web address per line) are optional.
-4. Tick the members to assign and select **Create Task**. New tasks start in Backlog.
+4. In **Assignees**, type part of a name (any capitalization) or open the list to browse, and pick each member to assign; only members of the chosen project's team are offered. Each picked member appears above the field; select × to remove one. With the keyboard, use the arrow keys and Enter to pick, and Tab to reach a × button. Select **Create Task**. New tasks start in Backlog.
 5. To change a task later, open it and select **Edit task**.
 
 ### Task history
