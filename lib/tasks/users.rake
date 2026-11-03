@@ -10,6 +10,7 @@ namespace :users do
                # Google sign-in does not set names; use the email's first part until they edit it.
                user.name = email.split("@").first if user.name.blank?
                user.role = :chief_engineer
+               user.subteam = nil
                user.access_revoked_at = nil
 
                if user.save

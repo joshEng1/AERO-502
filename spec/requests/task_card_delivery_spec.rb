@@ -31,16 +31,16 @@ RSpec.describe "Delivered task card stories", type: :request do
           expect(task.attributes.symbolize_keys).to include(
                title: "Inspect new wing bracket",
                description: "Upload the signed inspection sheet.",
-               instructions: "Use revision C and photograph both faces.",
+               instructions: "Use revision C and photograph both faces.\n\nReference links:\nhttps://example.com/bracket-plan",
                start_date: Date.new(2026, 10, 5),
                due_date: Date.new(2026, 10, 12),
                estimated_hours: 6.25,
                status: "backlog",
-               project_subteam_id: project_subteams(:aero_wing).id,
+               project_id: projects(:aero).id,
                creator_id: users(:officer).id
           )
           expect(task.assignee_ids).to eq([ users(:member).id ])
-          expect(task.links.map(&:url)).to eq([ "https://example.com/bracket-plan" ])
+          expect(task.reference_urls).to eq([ "https://example.com/bracket-plan" ])
 
           get task_path(task)
           expect(response).to have_http_status(:ok)
@@ -88,7 +88,7 @@ RSpec.describe "Delivered task card stories", type: :request do
 
      it "assigns multiple members once each and removes a member when edited" do
           second_member = User.create!(name: "Taylor Member", email: "taylor@example.test", password: "password",
-                                       role: :member, team: teams(:aerodynamics))
+                                       role: :member, subteam: subteams(:wing))
           sign_in_as_officer
 
           post tasks_path, params: {
@@ -102,13 +102,14 @@ RSpec.describe "Delivered task card stories", type: :request do
           get task_path(task)
           expect(response.body).to include("Morgan Member", "Taylor Member")
           get edit_task_path(task)
-          checked_ids = response.parsed_body.css('input[name="task[assignee_ids][]"][checked]').map { |input| input["value"].to_i }
+          checked_ids = response.parsed_body.css('select[name="task[assignee_ids][]"] option[selected]').map { |input| input["value"].to_i }
           expect(checked_ids).to match_array([ users(:member).id, second_member.id ])
 
           patch task_path(task), params: { task: { assignee_ids: [ "", second_member.id ] } }
           expect(response).to redirect_to(task_path(task))
           expect(task.reload.assignee_ids).to eq([ second_member.id ])
-          expect(task.task_assignments.count).to eq(1)
+          expect(task.task_assignments.count).to eq(2)
+          expect(task.active_assignments.count).to eq(1)
           get task_path(task)
           assigned = response.parsed_body.css(".detail-list div").find { |row| row.at_css("dt").text == "Assigned members" }
           expect(assigned.at_css("dd").text).to eq("Taylor Member")

@@ -34,12 +34,16 @@
   </div>
 <% end %>
 
-<% if @tasks.none? && task_filter.active? && Task.accessible_to(current_user).exists? %>
+<% if @tasks.none? %>
   <div class="panel empty-state">
     <h2>No tasks found</h2>
-    <p>No tasks match your search or filters.</p>
+    <p><%= task_filter.active? && Task.accessible_to(current_user).exists? ? "No tasks match your search or filters." : "There are no permitted tasks on this board." %></p>
   </div>
-<% elsif @tasks.any? %>
+<% end %>
+<% if flash[:unassigned_project_id] %>
+  <p class="panel" role="status">This task has no assignees and does not appear on a subteam board. <%= link_to "Open its project board", tasks_path(filter: {project_id: flash[:unassigned_project_id]}) %>.</p>
+<% end %>
+<% if @view == "board" || @tasks.any? %>
   <% if @hours %>
     <p class="board-summary" data-board-summary>
       <strong class="<%= "summary-alert" if @tasks.any?(&:overdue?) %>"><%= @tasks.count(&:overdue?) %> overdue</strong>
@@ -57,20 +61,24 @@
           <h2 id="<%= status %>-heading"><%= status.humanize %></h2>
           <span><%= @tasks.count { |task| task.status == status } %></span>
         </div>
+        <% if current_user.leader? %>
+          <p><%= link_to "Add task", new_task_path(status: status, return_to_board: "1", filter: task_filter.to_h), class: "button button-secondary button-small", aria: {label: "Add #{status.humanize.downcase} task"} %></p>
+        <% end %>
         <% @tasks.select { |task| task.status == status }.each do |task| %>
           <article class="task-card">
             <div class="task-meta">
-              <span><%= task.team.name %> · <%= task.subteam.name %></span>
+              <span><%= task.team.name %> · <%= task.subteam_names %></span>
               <span>
                 <% if task.overdue? %><span class="overdue-label">Overdue</span><% end %>
                 Due <%= task.due_date.to_fs(:short) %>
               </span>
             </div>
             <h3><%= link_to task.title, task %></h3>
+            <% if task.blocked? %><span class="badge" data-blocked>Blocked</span><% end %>
             <p><%= truncate(task.description, length: 110) %></p>
             <div class="task-foot">
               <span><%= task.assignees.map(&:name).to_sentence.presence || "Unassigned" %></span>
-              <strong><%= number_with_precision(@hours ? @hours.actual_for_task(task) : task.total_actual_hours, precision: 1, strip_insignificant_zeros: true) %>/<%= number_with_precision(task.estimated_hours, precision: 1, strip_insignificant_zeros: true) %>h</strong>
+              <strong><%= number_with_precision(@hours ? @hours.actual_for_task(task) : task.actual_hours_for(current_user), precision: 1, strip_insignificant_zeros: true) %>/<%= number_with_precision(task.estimated_hours, precision: 1, strip_insignificant_zeros: true) %>h</strong>
             </div>
           </article>
         <% end %>
@@ -84,5 +92,3 @@
     <p><%= @view == "mine" ? "No tasks are assigned to you." : "There are no permitted tasks on this board." %></p>
   </div>
 <% end %>
-
-<%= render "tasks/hours", hours: @hours if @hours && @tasks.empty? %>

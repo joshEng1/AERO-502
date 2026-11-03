@@ -1,9 +1,0 @@
-aero_wing:
-  project: aero
-  subteam: wing
-archive_wing:
-  project: archive
-  subteam: wing
-airframe_build:
-  project: airframe_build
-  subteam: airframe

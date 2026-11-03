@@ -22,6 +22,8 @@ module Aero502
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.0
     config.generators.test_framework :rspec
+    # Deferred constraints and history triggers are part of the approved design.
+    config.active_record.schema_format = :sql
 
     # SAE AERO works in College Station, so "today" and timestamps use US Central time.
     config.time_zone = "Central Time (US & Canada)"

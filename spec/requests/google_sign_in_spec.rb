@@ -225,7 +225,7 @@ RSpec.describe "Google sign-in", type: :request do
      end
 
      it "refuses password sign-in for a person who has no password" do
-          person = User.create!(name: "Google Only", email: "google.only@tamu.edu", role: :member, team: teams(:aerodynamics))
+          person = User.create!(name: "Google Only", email: "google.only@tamu.edu", role: :member, subteam: subteams(:wing))
           post login_path, params: { email: person.email, password: "" }
 
           expect(response.body).to include("Access not authorized")

@@ -25,14 +25,14 @@ RSpec.describe "users:grant_chief_engineer" do
      end
 
      it "promotes an existing person and restores revoked access without renaming them" do
-          member = users(:member)
+          member = users(:officer)
           member.update_columns(access_revoked_at: Time.current)
 
           expect { run_task(member.email) }
                .to not_change(User, :count).and output(/Chief Engineer \(updated\)/).to_stdout
           expect(member.reload).to be_chief_engineer
           expect(member.access_revoked_at).to be_nil
-          expect(member.name).to eq("Morgan Member")
+          expect(member.name).to eq("Olivia Officer")
      end
 
      it "refuses to run without any emails" do

@@ -108,7 +108,7 @@ RSpec.describe "Effort and dashboard delivery", type: :request do
      it "explains an empty assignment list on the member board" do
           member = User.create!(
                name: "Unassigned Member", email: "unassigned@example.test",
-               password: "password", role: :member, team: teams(:aerodynamics)
+               password: "password", role: :member, subteam: subteams(:wing)
           )
           sign_in(member)
 
@@ -127,16 +127,16 @@ RSpec.describe "Effort and dashboard delivery", type: :request do
           first_member = users(:member)
           second_member = User.create!(
                name: "Sam Second", email: "sam.second@example.test",
-               password: "password", role: :member, team: teams(:aerodynamics)
+               password: "password", role: :member, subteam: subteams(:wing)
           )
           task = Task.create!(
                title: "Shared effort check", description: "Measure shared effort.",
                start_date: Date.new(2026, 10, 1),
-               estimated_hours: 8, due_date: Date.new(2026, 10, 20), status: :backlog, project_subteam: project_subteams(:aero_wing),
+               estimated_hours: 8, due_date: Date.new(2026, 10, 20), status: :backlog, project: projects(:aero),
                creator: users(:officer)
           )
           [ first_member, second_member ].each do |member|
-               TaskAssignment.create!(task: task, user: member)
+               TaskAssignment.create!(task: task, user: member, assigned_by: users(:officer), assigned_at: Time.current)
           end
           TimeEntry.create!(task: task, user: first_member, hours: 4, worked_on: Date.new(2026, 9, 28))
           TimeEntry.create!(task: task, user: second_member, hours: 3, worked_on: Date.new(2026, 9, 29))

@@ -2,4 +2,3 @@
 
 pin "application"
 pin "member_selector"
-pin "timeline_scroll"

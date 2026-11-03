@@ -5,8 +5,8 @@ class TimelinesController < ApplicationController
      before_action :ensure_leader
 
      def show
-          tasks = task_filter.apply(Task.accessible_to(current_user)).includes(:team, :subteam, :assignees).to_a
-          @timeline = TaskTimeline.new(tasks: tasks)
+          tasks = task_filter.apply(Task.accessible_to(current_user)).includes(:team, :subteams, :assignees).to_a
+          @timeline = TaskTimeline.new(tasks: tasks, from: params[:from], weeks: params[:weeks])
           if request.format.csv?
                report = TaskReport.new(user: current_user, filter: task_filter, tasks: Task.where(id: tasks.map(&:id)))
                send_data ReportCsv.tasks(report), filename: "timeline.csv", type: "text/csv; charset=utf-8"

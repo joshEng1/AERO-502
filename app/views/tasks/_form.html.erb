@@ -1,12 +1,14 @@
 <%= form_with model: task, class: "panel task-form" do |form| %>
+  <% if params[:return_to_board] == "1" %>
+    <%= hidden_field_tag :return_to_board, "1" %>
+    <% task_filter.to_h.each do |key, value| %>
+      <% Array(value).each do |item| %><%= hidden_field_tag "filter[#{key}]#{'[]' if value.is_a?(Array)}", item, id: nil %><% end %>
+    <% end %>
+  <% end %>
   <% if task.errors.any? %>
     <div class="error-summary" role="alert" aria-labelledby="error-heading">
       <h2 id="error-heading"><%= pluralize(task.errors.count, "error") %> prevented this task from being saved</h2>
-      <ul>
-        <% task.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
+      <ul><% task.errors.full_messages.each do |message| %><li><%= message %></li><% end %></ul>
     </div>
   <% end %>
 
@@ -15,44 +17,32 @@
     <%= form.text_field :title, required: true, **field_error_attributes(task, :title) %>
     <%= field_error(task, :title) %>
   </div>
-
   <div class="form-grid">
     <div class="field">
       <%= form.label :project_id, "Project" %>
-      <%= form.select :project_id, options_for_select(@projects.map { |project| [ project.full_name, project.id, { data: { team_id: project.team_id } } ] }, task.project_id),
-                      { prompt: "Select a project" }, required: true, **field_error_attributes(task, :project) %>
-      <p class="hint">Listed as team · project. Select a participating subteam below. The parent team comes from the project.</p>
+      <%= form.select :project_id, options_for_select(@projects.map { |project| [project.full_name, project.id, {"data-team-id" => project.team_id}] }, task.project_id), { prompt: "Select a project" }, required: true, **field_error_attributes(task, :project) %>
+      <p class="hint">The class comes from the project. A task appears on each subteam board whose members are assigned to it.</p>
+      <% if task_filter.selected_project_ids.many? %><p class="hint">Several projects are selected on your board. Choose the project for this task.</p><% end %>
       <%= field_error(task, :project) %>
     </div>
     <div class="field">
-      <%= form.label :subteam_id, "Responsible subteam" %>
-      <%= form.collection_select :subteam_id, @subteams, :id, :full_name, { prompt: "Select a participating subteam" }, required: true, **field_error_attributes(task, :project_subteam) %>
-      <%= field_error(task, :project_subteam) %>
+      <%= form.label :status %>
+      <%= form.select :status, Task.statuses.keys.map { |status| [status.humanize, status] } %>
     </div>
-    <% if task.persisted? %>
-      <div class="field">
-        <%= form.label :status %>
-        <%= form.select :status, Task.statuses.keys.map { |status| [status.humanize, status] } %>
-      </div>
-    <% end %>
   </div>
-
   <div class="field">
     <%= form.label :description, "Expected deliverables (optional)" %>
     <%= form.text_area :description, rows: 4 %>
   </div>
-
   <div class="field">
     <%= form.label :instructions, "Work instructions (optional)" %>
-    <%= form.text_area :instructions, rows: 5 %>
+    <%= form.text_area :instructions, value: task.instructions_without_reference_links, rows: 5 %>
   </div>
-
   <div class="field">
     <%= form.label :reference_links_text, "Reference links (optional, one per line)" %>
     <%= form.text_area :reference_links_text, rows: 3, placeholder: "https://…", **field_error_attributes(task, :reference_links_text) %>
     <%= field_error(task, :reference_links_text) %>
   </div>
-
   <div class="form-grid">
     <div class="field">
       <%= form.label :start_date %>
@@ -71,21 +61,25 @@
     </div>
   </div>
 
-  <fieldset class="field" data-member-selector>
-    <legend>Assigned members</legend>
-    <p class="hint">Choose one or more members from the selected team.</p>
-    <div class="check-grid" data-member-options>
-      <%= form.collection_check_boxes :assignee_ids, @assignees, :id, :name do |box| %>
-        <%= box.label class: "check-option", data: { member_name: box.text, team_id: box.object.team_id } do %>
-          <%= box.check_box %>
-          <span><%= box.text %></span>
-        <% end %>
-      <% end %>
-    </div>
-  </fieldset>
-
+  <div class="field member-selector" data-member-selector>
+    <%= form.label :assignee_ids, "Assigned members" %>
+    <p class="hint" id="member-selector-help">Browse or search by name. Select several members; remove a name to end its assignment. Only members and officers of the project's class are eligible.</p>
+    <%= hidden_field_tag "task[assignee_ids][]", "", id: nil %>
+    <%= select_tag "task[assignee_ids][]", options_for_select(@assignees.map { |member| [member.name, member.id, {"data-team-id" => member.team_id}] }, @selected_assignee_ids), multiple: true, size: 5, id: "task_assignee_ids", data: { member_source: true }, aria: { describedby: "member-selector-help" } %>
+  </div>
+  <div class="field">
+    <%= form.label :primary_contact_id, "Primary contact (optional)" %>
+    <%= form.select :primary_contact_id, options_for_select(@assignees.select { |member| @selected_assignee_ids.include?(member.id) }.map { |member| [member.name, member.id] }, @primary_contact_id), include_blank: "No primary contact" %>
+    <p class="hint">Choose an active assignee as the single primary contact.</p>
+  </div>
+  <div class="field">
+    <%= form.label :prerequisite_ids, "Prerequisite tasks (optional)" %>
+    <%= hidden_field_tag "task[prerequisite_ids][]", "", id: nil %>
+    <%= select_tag "task[prerequisite_ids][]", options_for_select(@prerequisites.map { |item| ["#{item.title} · #{item.project.name}", item.id, {"data-team-id" => item.team_id}] }, @selected_prerequisite_ids), multiple: true, size: 5, id: "task_prerequisite_ids" %>
+    <p class="hint">Choose tasks in this class that must finish first. Dependencies show blockers; they do not change dates or complete other tasks.</p>
+  </div>
   <div class="form-actions">
     <%= form.submit class: "button" %>
-    <%= link_to "Cancel", task.persisted? ? task_path(task) : tasks_path, class: "button button-secondary" %>
+    <%= link_to "Cancel", params[:return_to_board] == "1" ? tasks_path(filter: task_filter.to_h) : (task.persisted? ? task_path(task) : tasks_path), class: "button button-secondary" %>
   </div>
 <% end %>

@@ -27,18 +27,7 @@
     <%= field_error(@record, :name) %>
   </div>
 
-  <% if @record.is_a?(Project) %>
-    <% if @record.errors.any? %><div class="error-summary" role="alert"><%= @record.errors.full_messages.to_sentence %></div><% end %>
-    <fieldset class="field">
-      <legend>Participating subteams</legend>
-      <p class="hint">Choose one or more subteams of the selected parent team. A task will identify its responsible subteam.</p>
-      <%= hidden_field_tag "project[subteam_ids][]", "", id: nil %>
-      <% Subteam.active.where(team_id: (@record.team_id || (current_user.chief_engineer? ? Team.select(:id) : [current_user.team_id]))).includes(:team).sort_by(&:full_name).each do |subteam| %>
-        <label class="check-option"><%= check_box_tag "project[subteam_ids][]", subteam.id, (@selected_subteam_ids || @record.subteam_ids).include?(subteam.id), id: "project_subteam_#{subteam.id}" %><%= subteam.full_name %></label>
-      <% end %>
-      <%= field_error(@record, :subteams) %>
-    </fieldset>
-  <% end %>
+  <% if @record.errors.any? %><div class="error-summary" role="alert"><%= @record.errors.full_messages.to_sentence %></div><% end %>
 
   <div class="form-actions">
     <%= form.submit "Save #{record_label.downcase}", class: "button" %>
