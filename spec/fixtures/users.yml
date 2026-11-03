@@ -2,28 +2,28 @@ chief:
   name: Casey Chief
   email: chief@example.test
   password_digest: <%= BCrypt::Password.create("password") %>
-  global_role: 2
+  role: 2
 
 officer:
   name: Olivia Officer
   email: officer@example.test
   password_digest: <%= BCrypt::Password.create("password") %>
-  global_role: 0
+  role: 1
 
 other_officer:
   name: Owen Officer
   email: other.officer@example.test
   password_digest: <%= BCrypt::Password.create("password") %>
-  global_role: 0
+  role: 1
 
 member:
   name: Morgan Member
   email: member@example.test
   password_digest: <%= BCrypt::Password.create("password") %>
-  global_role: 0
+  role: 0
 
 other_member:
   name: Bailey Member
   email: other.member@example.test
   password_digest: <%= BCrypt::Password.create("password") %>
-  global_role: 0
+  role: 0

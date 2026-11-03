@@ -45,7 +45,7 @@ RSpec.describe "Board summary and hours", type: :request do
           expect(card_for(tasks(:spar_check)).at_css(".overdue-label").text).to eq("Overdue")
           expect(card_for(tasks(:wing_test)).at_css(".overdue-label")).to be_nil
 
-          tasks(:spar_check).update!(status: :completed)
+          tasks(:spar_check).update!(status: :completed, acting_user: users(:chief))
           get tasks_path
           expect(card_for(tasks(:spar_check)).at_css(".overdue-label")).to be_nil
      end
@@ -75,12 +75,12 @@ RSpec.describe "Board summary and hours", type: :request do
                "Project total" => [ "14 hours", "1 hour", "13 hours under estimate" ]
           )
           chart = response.parsed_body.css("[data-member-chart] [data-member]").to_h { |bar| [ bar["data-member"], bar["data-actual"] ] }
-          expect(chart).to eq("Bailey Member" => "0.0", "Morgan Member" => "1.0")
+          expect(chart).to eq("Bailey Member" => "0.0", "Morgan Member" => "1.0", "Olivia Officer" => "0.0", "Owen Officer" => "0.0")
      end
 
      it "includes both endpoint dates and labels shared estimates without double counting them" do
-          tasks(:wing_test).assignees << User.create!(name: "Sam Second", email: "sam@example.test",
-                                                      password: "password", role: :member, team: teams(:aerodynamics))
+          second = User.create!(name: "Sam Second", email: "sam@example.test", password: "password", role: :member, subteam: subteams(:wing))
+          tasks(:wing_test).assign_members(tasks(:wing_test).assignee_ids + [ second.id ], actor: users(:officer))
           sign_in(users(:chief))
           get tasks_path(filter.merge(from: "2026-09-27", to: "2026-09-30"))
 
@@ -106,7 +106,7 @@ RSpec.describe "Board summary and hours", type: :request do
           get tasks_path(filter(project_id: projects(:aero).id))
 
           expect(response.parsed_body.css(".task-card h3").map(&:text)).to eq([ "Wing load test" ])
-          expect(hour_rows.keys).to eq([ "Morgan Member", "Project total" ])
+          expect(hour_rows.keys).to eq([ "Morgan Member", "Olivia Officer", "Project total" ])
           expect(response.parsed_body.at_css("#filter_project_id option[selected]").text)
                .to eq("Aerodynamics · SAE AERO Design")
      end
@@ -126,7 +126,7 @@ RSpec.describe "Board summary and hours", type: :request do
           sign_in(users(:officer))
           get tasks_path
 
-          expect(hour_rows.keys).to eq([ "Morgan Member", "Project total" ])
+          expect(hour_rows.keys).to eq([ "Morgan Member", "Olivia Officer", "Project total" ])
           expect(response.body).not_to include("Verify spar dimensions")
      end
 
@@ -148,7 +148,7 @@ RSpec.describe "Board summary and hours", type: :request do
      it "shows new values after a status or hours change when the leader refreshes" do
           sign_in(users(:chief))
           get tasks_path(filter)
-          tasks(:wing_test).update!(status: :completed)
+          tasks(:wing_test).update!(status: :completed, acting_user: users(:chief))
           TimeEntry.create!(task: tasks(:wing_test), user: users(:member), hours: 2, worked_on: Date.new(2026, 10, 1))
 
           get tasks_path

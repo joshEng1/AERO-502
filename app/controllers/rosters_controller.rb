@@ -4,29 +4,35 @@ class RostersController < ApplicationController
      before_action :ensure_can_manage
 
      def update
-          member = User.member.in_teams(@subteam.team_id).find_by(id: params[:user_id], access_revoked_at: nil)
-          return roster_error("Choose an approved member from this class.") unless member
-          member.with_lock do
-               return roster_error("Remove the member's current subteam membership before adding another.") if member.subteam_id && member.subteam_id != @subteam.id
-
-               member.update!(subteam: @subteam)
-          end
-          redirect_to subteam_path(@subteam), notice: "Member added to the roster."
+          transfer_to(@subteam)
      end
 
+     # Removing a membership requires a destination: non-admins always have one.
      def destroy
-          member = User.member.find_by(id: params[:user_id])
-          return roster_error("This member does not belong to this roster.") unless member
+          destination = Subteam.active.find_by(id: params[:destination_subteam_id], team_id: @subteam.team_id)
+          return roster_error("Choose a destination subteam to transfer this membership.") unless destination
 
-          member.with_lock do
-               return roster_error("This member does not belong to this roster.") unless member.subteam_id == @subteam.id
-
-               member.update!(subteam: nil)
-          end
-          redirect_to subteam_path(@subteam), notice: "Membership removed. Their account, assignments and hours are kept."
+          transfer_to(destination, source: @subteam)
      end
 
      private
+
+     def transfer_to(destination, source: nil)
+          member = User.assignable.in_teams(@subteam.team_id).find_by(id: params[:user_id])
+          return roster_error("Choose an approved member or officer from this class.") unless member
+
+          User.transaction do
+               User.connection.execute("SELECT pg_advisory_xact_lock(5023001)")
+               member.lock!
+               if source && member.subteam_id != source.id
+                    return roster_error("This person does not belong to this roster.")
+               end
+               member.update!(subteam: destination)
+          end
+          redirect_to subteam_path(@subteam), notice: "Membership transferred to #{destination.name}. Their account, assignments, history and hours are kept."
+     rescue ActiveRecord::RecordInvalid => error
+          roster_error(error.record.errors.full_messages.to_sentence)
+     end
 
      def set_subteam
           @subteam = Subteam.find(params[:subteam_id])

@@ -14,19 +14,18 @@ RSpec.describe "Filtered CSV reports", type: :request do
      end
 
      before do
-          pair = project.project_subteams.create!(subteam: subteam)
           @e, @f, @g = %w[E F G].map do |name|
                User.create!(name: "Member #{name}", email: "report.#{name.downcase}@tamu.edu", role: :member, team: team, subteam: subteam)
           end
-          @shared = Task.create!(title: "Shared report task", project_subteam: pair, creator: users(:chief), estimated_hours: 10,
+          @shared = Task.create!(title: "Shared report task", project: project, creator: users(:chief), estimated_hours: 10,
                                  start_date: day_one, due_date: day_two)
-          @shared.assignees = [ @e, @f ]
+          @shared.assign_members([ @e.id, @f.id ], actor: users(:chief))
           TimeEntry.create!(task: @shared, user: @e, hours: 2.5, worked_on: day_one)
           TimeEntry.create!(task: @shared, user: @e, hours: 2.5, worked_on: day_two)
           TimeEntry.create!(task: @shared, user: @f, hours: 3, worked_on: day_two)
-          @formula = Task.create!(title: "=SUM(1,1)", project_subteam: pair, creator: users(:chief), estimated_hours: 0,
+          @formula = Task.create!(title: "=SUM(1,1)", project: project, creator: users(:chief), estimated_hours: 0,
                                   start_date: day_one, due_date: day_two)
-          @formula.assignees = [ @f ]
+          @formula.assign_members([ @f.id ], actor: users(:chief))
           sign_in(users(:chief))
      end
 
@@ -40,7 +39,7 @@ RSpec.describe "Filtered CSV reports", type: :request do
           expect(csv_rows.headers).to eq(ReportCsv::TASK_HEADERS)
           expect(csv_rows.map { |row| row["Task"].delete_prefix("'") }).to match_array(board_titles)
           shared = csv_rows.find { |row| row["Task"] == @shared.title }
-          expect(shared.to_h).to include("Estimated hours" => "10.0", "Actual hours" => "8.0", "Team" => team.name,
+          expect(shared.to_h).to include("Estimated hours" => "10.0", "Actual hours" => "8.0", "Class" => team.name,
                                          "Subteam" => subteam.name, "Project" => project.name,
                                          "Start date" => day_one.iso8601, "Due date" => day_two.iso8601)
      end
@@ -72,7 +71,7 @@ RSpec.describe "Filtered CSV reports", type: :request do
           expect(csv_rows.map { |row| [ row["Member"], row["Total actual hours"] ] }).to eq([
                [ "Member E", "5.0" ], [ "Member F", "3.0" ], [ "Member G", "0.0" ]
           ])
-          expect(csv_rows.first.to_h).to include("Class" => team.name, "Team" => team.name, "Subteam" => subteam.name, "Project" => project.name)
+          expect(csv_rows.first.to_h).to include("Class" => team.name, "Subteam" => subteam.name, "Project" => project.name)
           get tasks_path(filter: filter)
           expect(response.parsed_body.at_css("[data-member='Member G']")["data-actual"]).to eq("0.0")
      end
@@ -101,10 +100,10 @@ RSpec.describe "Filtered CSV reports", type: :request do
 
      it "handles several selected teams but never exports another class to its officer" do
           get tasks_path(format: :csv, filter: { team_ids: [ team.id, teams(:structures).id ] })
-          expect(csv_rows.map { |row| row["Team"] }.uniq).to contain_exactly(team.name, teams(:structures).name)
+          expect(csv_rows.map { |row| row["Class"] }.uniq).to contain_exactly(team.name, teams(:structures).name)
           sign_in(users(:officer))
           get tasks_path(format: :csv, filter: { team_ids: [ team.id, teams(:structures).id ] })
-          expect(csv_rows.map { |row| row["Team"] }.uniq).to eq([ team.name ])
+          expect(csv_rows.map { |row| row["Class"] }.uniq).to eq([ team.name ])
           get member_hours_report_path(format: :csv, filter: { project_id: projects(:airframe_build).id })
           expect(csv_rows).to be_empty
           get tasks_path(format: :csv, view: "mine", filter: { q: "" })

@@ -36,7 +36,7 @@ AERO Task Hub replaces that with a board built around the team's own structure:
 - Each **task** has deliverables, work instructions, reference links, a start date, a due date, an hour estimate, a status (Backlog, In Progress or Completed) and one or more assigned members.
 - Members **log the hours** they actually worked, so leaders can compare planned and actual effort per task and per person.
 - Every assignment and status change is kept in the task's **history**, including who made it and when.
-- Only people the Chief Engineer has approved can sign in, using their **TAMU Google account**. There are no separate passwords to manage.
+- Only people the Chief Engineer has approved can sign in, using their **TAMU Google account**. Password sign-in is still available until the administrator completes the Google-only transition.
 
 ## Who can do what
 
@@ -52,9 +52,10 @@ The website checks these rules on the server as well as hiding buttons, so typin
 
 - **Google sign-in with an approved-people list.** The Chief Engineer adds each person's TAMU email and role on the **People** page. Removing someone's access keeps their past tasks and hours.
 - **Task board.** Backlog, In Progress and Completed columns with counts, overdue labels, and search and filters by class, subteam, project and member.
+- **Searchable Member filter.** Browse or type a partial name on the board and timeline; the selected member ID and other filters are retained.
 - **Searchable assignee picker.** Type part of a name to find and assign members, even with 80+ people. Only members of the project's class are offered.
 - **Hour logging and planned vs. actual.** Members record hours with the date worked (no more than 24 hours per person per day). Tasks and member summaries show estimate, actual and the difference.
-- **Timeline (Gantt chart).** Every task is drawn as a bar from its start date to its due date, grouped by class and subteam. The chart scrolls sideways through the whole schedule, opens at today, and has a matching text list for accessibility.
+- **Timeline (Gantt chart).** Every task is drawn as a bar from its start date to its due date, grouped by class and subteam. The chart scrolls sideways through the whole schedule, opens at today, and has a matching text list for accessibility. (The live site still pages through 4/6/8/12-week windows until this change is deployed.)
 - **Shared projects.** A project belongs to one class and can include work from several of its subteams.
 - **Subteam rosters.** Leaders see each member's assigned work, including members with no work or zero hours.
 - **CSV downloads.** Filtered task, timeline, member-hour and project-hour reports for use in a spreadsheet.
@@ -62,7 +63,7 @@ The website checks these rules on the server as well as hiding buttons, so typin
 - **Built-in help.** **Help** in the page header opens the user guide inside the website, even before signing in.
 - **Administrator safeguard.** The website will not let the last active Chief Engineer be demoted or removed, so the team can't lock itself out.
 
-> **Release status (November 2026):** shared projects, subteam rosters, CSV downloads, the searchable assignee picker and the scrolling timeline are finished on the `dev` branch and reach the live website with the next release. The live website currently runs the Sprint 2 release.
+> **Release evidence (2026-11-03 UTC):** `aero-task-hub` runs Sprint 3 commit `2e4df57`, release `v23`. Google sign-in was confirmed working by Sonny after the callback correction. Review and promotion into `dev`, `test` and `main` are tracked separately. See [the handover record](docs/SPRINT3_HANDOVER.md).
 
 ## Usage
 
@@ -88,7 +89,7 @@ This code has been run and tested with:
 | --- | --- |
 | Ruby | 4.0.6 (see `.ruby-version`) |
 | Rails | 8.1.4 |
-| PostgreSQL | 16 or newer (CI uses the current `postgres` image) |
+| PostgreSQL | 16 in CI; the deployed Heroku database reports 18.4 |
 | Bundler | 4.0.16 |
 | Ruby gems | Listed in `Gemfile` and `Gemfile.lock` |
 
@@ -130,14 +131,15 @@ Set these as **Heroku Config Vars** on the live website (Heroku dashboard → ap
 | Variable | Required? | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes (Heroku sets it) | Database connection. Heroku Postgres fills this in automatically. |
-| `RAILS_MASTER_KEY` | Yes | Unlocks the app's encrypted credentials. Its value is in `config/master.key`, which is never committed. |
+| `SECRET_KEY_BASE` | Production | Session-signing secret; configured privately on the deployed app. |
+| `RAILS_MASTER_KEY` | If encrypted credentials are used | Obtain privately from the owner. The observed deployment has no master key configured. |
 | `GOOGLE_CLIENT_ID` | Yes | Google sign-in client ID. See [Google Sign-In Setup](#google-sign-in-setup). |
 | `GOOGLE_CLIENT_SECRET` | Yes | Google sign-in client secret from the same Google client. |
 | `PASSWORD_SIGN_IN` | Optional | Set to `off` once everyone uses Google, to turn off the practice-account password form. |
 | `DEMO_PASSWORD` | Optional | Password given to practice accounts when practice data is loaded. Share it privately with testers. |
 | `RAILS_LOG_LEVEL` | Optional | How much detail the logs contain (default `info`). |
 
-**Required file:** `config/master.key` (local development only). Get it privately from a team member or the Chief Engineer.
+**Encrypted credentials:** obtain `config/master.key` privately only when your environment uses them. Never copy production secrets into development or tests.
 
 > **Never commit secrets.** `config/master.key` is already in `.gitignore`. Don't put real values for any of the variables above in this README, the repository, chat, screenshots or the project notebook.
 
@@ -147,7 +149,7 @@ Google sign-in is set up for the live website. These steps are for a new website
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/auth/clients), open **Google Auth Platform**.
 2. **Branding:** set the app name to `AERO Task Hub` and use an organization email as the support email.
-3. **Audience:** choose **Internal** (only TAMU Google accounts) if the project belongs to TAMU's Google organization. Otherwise keep **External** and select **Publish app** so it is **In production**. Do not leave it in **Testing**; that only lets in a hand-entered list of test users.
+3. **Audience:** use the existing owner's approved configuration. Internal requires the appropriate Google Workspace organization. Google account eligibility and the application's People approval are separate checks; verify both before changing audience or publishing settings.
 4. **Clients:** create (or open) a client of type **Web application** and add these **Authorized redirect URIs**:
    - `https://aero-task-hub-b5f4953964ed.herokuapp.com/auth/google_oauth2/callback` (live website)
    - `http://localhost:3000/auth/google_oauth2/callback` (developers)
@@ -172,7 +174,7 @@ If the website address ever changes (for example a new Heroku app name or a cust
    cd AERO-502
    ```
 
-3. Get `config/master.key` privately from the team and place it in the `config` folder.
+3. Configure a separate local database. Obtain the credentials key privately only if using encrypted credentials.
 4. Install the gems and create the database with practice data:
 
    ```bash
@@ -204,40 +206,19 @@ SimpleCov writes a coverage report to `coverage/index.html`. The automated tests
 
 ## Deployment
 
-The live website is the Heroku app **`aero-task-hub`**. It runs one web process and a Heroku Postgres database. When code is deployed, Heroku runs the database updates automatically (`release: bin/rails db:migrate` in the `Procfile`).
+The live app is **`aero-task-hub`** at https://aero-task-hub-b5f4953964ed.herokuapp.com/. Its verified deployment is commit `2e4df57` from `test`, Heroku release `v23`. The branch reconciliation PRs do not deploy anything.
 
-To deploy a reviewed version of `main` from a terminal:
-
-```bash
-git push https://git.heroku.com/aero-task-hub.git main:main
-```
-
-Or, in the Heroku dashboard: app → **Deploy** → connect the GitHub repository → **Manual deploy** of `main`. If you turn on automatic deploys, also tick **Wait for CI to pass before deploy**.
-
-After deploying, open https://aero-task-hub-b5f4953964ed.herokuapp.com/up (it should say the app is up), then sign in and check a task as each role.
-
-Back up the database before any update that changes data:
-
-```bash
-heroku pg:backups:capture -a aero-task-hub
-```
-
-The full update, rollback and restore steps are in the [administrator guide](docs/ADMIN_GUIDE.md) and [deployment guide](docs/DEPLOYMENT.md).
+Before any future deployment, finish Joshua's review, pass CI on the resulting release commit, capture a database backup, and verify the deployment source. Until `main` contains the approved Sprint 3 changes, keep automatic deployment from the older `main` disabled. Follow [the deployment guide](docs/DEPLOYMENT.md).
 
 ## CI/CD
 
-- **Branches:** work happens on feature branches, then moves `dev` → `test` → `main`. Only `main` goes to the live website.
-- **Continuous integration:** GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on every push to `dev`, `test` and `main`. It runs the RSpec tests against PostgreSQL, RuboCop, Brakeman and the import-map audit, and saves the coverage report.
-- **Continuous deployment:** `main` is deployed to Heroku after CI passes (see [Deployment](#deployment)).
+- **Review flow:** feature branches → `dev` → `test` → `main`, with review and passing CI at each promotion. The November 3 deployment from `test` is an explicitly recorded exception being reconciled through PRs.
+- **CI:** every pull request and pushes to `dev`, `test` and `main` run RSpec against PostgreSQL 16, RuboCop, Brakeman and the import-map audit.
+- **Deployment:** verify the actual Heroku Deploy configuration. Creating or merging a review branch is not authorization to deploy an unverified commit.
 
 ## Hosting Cost
 
-| Item | Plan | Cost |
-| --- | --- | --- |
-| Web server | Heroku Eco dyno | $5/month flat, shared by every Eco app on the account; the site sleeps after 30 idle minutes and wakes on the next visit |
-| Database | Heroku Postgres Essential-0 | Up to $5/month |
-
-About **$10/month in total**. Eco never bills more: if its monthly hours run out, the site sleeps until the next month. Check the current prices on the Heroku dashboard (**Resources** and **Billing**) at each handover; prices change.
+The observed plans are Heroku Eco and Postgres Essential-0. Record current charges from the owner's Resources and Billing screens at handover; the final account's invoice has not been reviewed. A stopped web process does not remove its database add-on or establish that all charges have ended.
 
 ## Documentation
 
@@ -274,5 +255,5 @@ About **$10/month in total**. Eco never bills more: if its monthly hours run out
 
 ### AI Use
 
-- Claude (Anthropic) assisted with parts of the Sprint 3 code (the searchable assignee picker and the scrolling timeline), with code review, and with writing this README. The team reviewed all of it, and the automated tests and CI checks were run on the results.
-- *(Team: add any other AI tools used during development and what they were used for.)*
+- Claude (Anthropic) assisted with parts of the Sprint 3 code (the scrolling timeline), with code review, and with writing this README. The team reviewed all of it, and the automated tests and CI checks were run on the results.
+- OpenAI Codex assisted with the approved Sprint 3 implementation, regression fixes, deployment diagnostics and review preparation. CI results and live observations are recorded separately from customer acceptance.

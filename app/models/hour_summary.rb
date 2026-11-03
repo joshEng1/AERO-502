@@ -5,7 +5,7 @@ class HourSummary
 
      attr_reader :tasks, :from, :to, :errors
 
-     def initialize(tasks:, from: nil, to: nil, members: [], member_id: nil)
+     def initialize(tasks:, from: nil, to: nil, members: nil, member_id: nil)
           @tasks = tasks
           @included_members = members
           @member_id = member_id
@@ -45,7 +45,7 @@ class HourSummary
      private
 
      def members
-          rows = (@included_members.to_a + tasks.flat_map(&:assignees) + entries_in_range.map(&:user)).uniq
+          rows = (@included_members ? @included_members.to_a : tasks.flat_map(&:assignees) + entries_in_range.map(&:user)).uniq
           rows = rows.select { |member| member.id == @member_id } if @member_id
           rows.sort_by { |member| [ member.name, member.id ] }
      end

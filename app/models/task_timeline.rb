@@ -10,6 +10,7 @@ class TaskTimeline
      MAX_WEEKS_AFTER = 52
 
      Bar = Struct.new(:offset, :span, :clipped_start, :clipped_end, keyword_init: true)
+     Group = Data.define(:id, :name, :full_name)
 
      attr_reader :from, :to, :tasks
 
@@ -38,8 +39,13 @@ class TaskTimeline
      # Tasks grouped by team, then subteam, each sorted by name and start date.
      def groups
           tasks.group_by(&:team).sort_by { |team, _| team.name }.map do |team, team_tasks|
-               subteams = team_tasks.group_by(&:subteam).sort_by { |subteam, _| subteam.name }
-               [ team, subteams.map { |subteam, rows| [ subteam, rows.sort_by { |task| [ task.start_date, task.title ] } ] } ]
+               subteams = team_tasks.group_by { |task| task.subteams.sort_by(&:id) }
+               groups = subteams.map do |memberships, rows|
+                    name = memberships.map(&:name).sort.join("; ").presence || "Unassigned"
+                    group = Group.new(memberships.map(&:id).join("-"), name, "#{team.name} · #{name}")
+                    [ group, rows.sort_by { |task| [ task.start_date, task.title ] } ]
+               end
+               [ team, groups.sort_by { |group, _rows| group.name } ]
           end
      end
 

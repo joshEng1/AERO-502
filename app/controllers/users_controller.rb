@@ -4,7 +4,7 @@ class UsersController < ApplicationController
      before_action :set_user, only: %i[edit update revoke restore]
 
      def index
-          @users = User.includes(active_team_membership: [ :team, { subteam_memberships: :subteam } ]).order(:name)
+          @users = User.includes(membership: { subteam: :team }).order(:name)
      end
 
      # Adds a person to the allowed list; they sign in with Google using this email.
@@ -61,6 +61,7 @@ class UsersController < ApplicationController
      # Only the Chief Engineer reaches these actions (see ensure_chief_engineer).
      def assign_role
           @user.role = params.require(:user).fetch(:role, @user.role)
+          @user.subteam = nil if @user.chief_engineer? && !params.require(:user).key?(:subteam_id)
      end
 
      def user_params

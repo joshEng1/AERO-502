@@ -13,6 +13,7 @@ Rails.application.routes.draw do
      get "auth/:provider/callback", to: "sessions#omniauth", as: :omniauth_callback
      get "auth/failure", to: "sessions#failure"
      get "help", to: "help#show"
+     get "help/restart", to: "help#restart", as: :restart_guide
 
      resources :users, only: %i[index new create edit update] do
           member do

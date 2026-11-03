@@ -1,4 +1,4 @@
-# PostgreSQL. Versions 9.3 and up are supported.
+# PostgreSQL 16 is the supported CI and deployment verification baseline.
 #
 # Install the pg driver:
 #   gem install pg

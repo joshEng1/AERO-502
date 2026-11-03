@@ -191,7 +191,7 @@ RSpec.describe "Organization management", type: :request do
 
           patch user_path(users(:member)), params: { user: { subteam_id: subteams(:airframe).id } }
           expect(response).to have_http_status(:unprocessable_content)
-          expect(response.body).to include("Subteam must belong to the person&#39;s team")
+          expect(response.body).to include("cannot change teams until incompatible active assignments are resolved")
      end
 
      it "seeds the SAE AERO classes, their subteams and starter projects" do
@@ -206,6 +206,6 @@ RSpec.describe "Organization management", type: :request do
                "Micro Class" => [ "Aerodynamics", "Structures" ],
                "Advanced Class" => [ "Aerodynamics", "Autonomous Systems", "Structures" ]
           )
-          expect(Task.find_by!(title: "Wing load test").subteam.name).to eq("Aerodynamics")
+          expect(Task.find_by!(title: "Wing load test", project: Project.find_by!(name: "Wing design")).subteams.order(:name).first.name).to eq("Aerodynamics")
      end
 end

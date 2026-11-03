@@ -1,6 +1,6 @@
 <section class="panel" data-roster>
   <h2>Subteam roster</h2>
-  <p class="hint">One active subteam per member is the current policy. Zero recorded hours does not mean a person is available.</p>
+  <p class="hint">Each member and officer belongs to one subteam. Transfer people between subteams within this class. Zero recorded hours does not mean a person is available.</p>
   <%= form_with url: subteam_path(@record), method: :get, class: "range-form", aria: { label: "Roster scope" } do |form| %>
     <div class="field"><%= label_tag "filter_project_id", "Project" %><%= select_tag "filter[project_id]", options_from_collection_for_select(@record.team.projects.order(:name), :id, :name, params.dig(:filter, :project_id)), include_blank: "All projects" %></div>
     <div class="field"><%= form.label :from, "Hours from" %><%= form.date_field :from, value: @roster_report.hours.from %></div>
@@ -9,8 +9,8 @@
   <% end %>
   <% if @roster_report.hours.errors.any? %><p role="alert"><%= @roster_report.hours.errors.to_sentence %>. Showing hours for all dates.</p><% end %>
   <%= form_with url: subteam_roster_path(@record), method: :patch, class: "range-form" do |form| %>
-    <div class="field"><%= form.label :user_id, "Add approved member" %><%= form.collection_select :user_id, @candidates, :id, :name, prompt: "Select a member" %></div>
-    <%= form.submit "Add to roster", class: "button" %>
+    <div class="field"><%= form.label :user_id, "Transfer approved person to this roster" %><%= form.collection_select :user_id, @candidates, :id, :name, prompt: "Select a member" %></div>
+    <%= form.submit "Transfer to roster", class: "button" %>
   <% end %>
   <div class="table-wrap"><table>
     <thead><tr><th>Member</th><th>Assigned work and project</th><th>Actual hours</th><th>Membership</th></tr></thead>
@@ -20,13 +20,19 @@
         <% actual = @roster_report.hours.member_rows.find { |row| row.member.id == member.id }&.actual || 0 %>
         <tr data-roster-member="<%= member.id %>">
           <th scope="row"><%= member.name %><%= " (access removed)" if member.access_revoked? %></th>
-          <td><% if tasks.empty? %>No assigned work<% else %><ul><% tasks.each do |task| %><li><%= link_to task.title, task %> · <%= task.project.name %> · <%= task.subteam.name %> · <%= task.status.humanize %></li><% end %></ul><% end %></td>
+          <td><% if tasks.empty? %>No assigned work<% else %><ul><% tasks.each do |task| %><li><%= link_to task.title, task %> · <%= task.project.name %> · <%= task.subteam_names %> · <%= task.status.humanize %></li><% end %></ul><% end %></td>
           <td><%= estimate_label(actual) %></td>
-          <td><%= button_to "Remove membership", subteam_roster_path(@record, user_id: member.id), method: :delete, class: "link-button" %></td>
+          <td><% if @destinations.any? && !member.access_revoked? %>
+            <%= form_with url: subteam_roster_path(@record), method: :delete do |form| %>
+              <%= hidden_field_tag :user_id, member.id, id: nil %>
+              <%= form.label :destination_subteam_id, "Transfer #{member.name} to", for: "transfer_#{member.id}" %>
+              <%= form.collection_select :destination_subteam_id, @destinations, :id, :name, {prompt: "Select destination"}, id: "transfer_#{member.id}", required: true %>
+              <%= form.submit "Transfer membership", class: "button button-secondary button-small" %>
+            <% end %>
+          <% end %></td>
         </tr>
       <% end %>
     </tbody>
   </table></div>
   <% if @members.empty? %><p>No members belong to this subteam yet.</p><% end %>
-  <p class="hint">Projects identify the associated work. Sprints are not a separate entity in this release.</p>
 </section>

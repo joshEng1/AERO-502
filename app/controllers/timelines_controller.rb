@@ -5,7 +5,7 @@ class TimelinesController < ApplicationController
      before_action :ensure_leader
 
      def show
-          tasks = task_filter.apply(Task.accessible_to(current_user)).includes(:team, :subteam, :assignees).to_a
+          tasks = task_filter.apply(Task.accessible_to(current_user)).includes(:team, :subteams, :assignees).to_a
           @timeline = TaskTimeline.new(tasks: tasks)
           if request.format.csv?
                report = TaskReport.new(user: current_user, filter: task_filter, tasks: Task.where(id: tasks.map(&:id)))
