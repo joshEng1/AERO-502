@@ -279,14 +279,13 @@ thead th { color: var(--muted); font-size: .78rem; letter-spacing: .06em; text-t
 .guide td, .guide th { vertical-align: top; }
 
 /* Timeline (Gantt) */
-.gantt-weeks-field { flex: 0 0 9rem !important; min-width: 9rem !important; }
 .gantt-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .75rem; }
 .gantt-toolbar h2 { margin: 0; font-size: 1.25rem; }
-.gantt-nav { display: flex; gap: .5rem; }
+[data-scroll-today][hidden] { display: none; }
 .gantt-legend { display: flex; flex-wrap: wrap; gap: 1.1rem; margin: 0 0 1rem; padding: 0; list-style: none; font-size: .85rem; color: var(--muted); }
 .gantt-swatch { display: inline-block; width: 1.4rem; height: .7rem; margin-right: .4rem; border-radius: 3px; vertical-align: 0; }
 .gantt-today-swatch { width: 3px; height: .9rem; background: #c0392b; }
-.gantt-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.gantt-scroll { overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--line); border-radius: 10px; }
 .gantt { --label: 15rem; --min-day: 1.3rem; --weekend: rgba(91, 24, 49, .05); position: relative; min-width: calc(var(--label) + var(--days) * var(--min-day)); font-size: .88rem; }
 .gantt-head, .gantt-row { display: grid; grid-template-columns: var(--label) 1fr; }
 .gantt-head { position: sticky; top: 0; z-index: 3; background: var(--paper); border-bottom: 2px solid var(--ink); }
