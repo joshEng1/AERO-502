@@ -99,8 +99,8 @@ Since Sprint 1: 45 → 169 examples, line coverage 216 → 630 lines (still 100%
 | KAN-21 | Search plus team and subteam filters | Only matching permitted tasks are shown | ☀ [task_search_filter_spec.rb:13](../spec/requests/task_search_filter_spec.rb#L13), [:25](../spec/requests/task_search_filter_spec.rb#L25) | Pass |
 | KAN-21 | Search for another team's restricted task | Never shown | ☂ [task_search_filter_spec.rb:44](../spec/requests/task_search_filter_spec.rb#L44) | Pass |
 | KAN-23 | Timeline bars | Each task's bar runs from start to due date, grouped by team and subteam | ☀ [timeline_spec.rb:11](../spec/requests/timeline_spec.rb#L11) | Pass |
-| KAN-23 | Unreadable dates or window size | Falls back to the default 6-week window | ☂ [timeline_spec.rb:95](../spec/requests/timeline_spec.rb#L95) | Pass |
-| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:110](../spec/requests/timeline_spec.rb#L110) | Pass |
+| KAN-23 | Schedule longer than the screen | One continuous chart covers every task's dates and scrolls sideways; tasks beyond 26 weeks back or 52 weeks ahead are marked Earlier or Later | ☀ [timeline_spec.rb:82](../spec/requests/timeline_spec.rb#L82), ☂ [timeline_spec.rb:104](../spec/requests/timeline_spec.rb#L104) | Pass |
+| KAN-23 | Member opens `/timeline` | Redirected; an officer sees only their own team | ☂ [timeline_spec.rb:118](../spec/requests/timeline_spec.rb#L118) | Pass |
 | KAN-24 | Task estimate vs. actual hours | Task states the difference ("over/under estimate") | ☀ [planned_vs_actual_spec.rb:16](../spec/requests/planned_vs_actual_spec.rb#L16) | Pass |
 | KAN-24 | Negative estimate | Rejected; zero is accepted | ☂ [planned_vs_actual_spec.rb:5](../spec/requests/planned_vs_actual_spec.rb#L5) | Pass |
 | KAN-25 | Allowed email signs in with Google | Signed in with the assigned role and team, ignoring letter case | ☀ [google_sign_in_spec.rb:24](../spec/requests/google_sign_in_spec.rb#L24) | Pass |

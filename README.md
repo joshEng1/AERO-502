@@ -55,7 +55,7 @@ The website checks these rules on the server as well as hiding buttons, so typin
 - **Searchable Member filter.** Browse or type a partial name on the board and timeline; the selected member ID and other filters are retained.
 - **Searchable assignee picker.** Type part of a name to find and assign members, even with 80+ people. Only members of the project's class are offered.
 - **Hour logging and planned vs. actual.** Members record hours with the date worked (no more than 24 hours per person per day). Tasks and member summaries show estimate, actual and the difference.
-- **Timeline (Gantt chart).** Every task is drawn as a bar from its start date to its due date, grouped by class and subteam. The deployed version uses selectable 4/6/8/12-week windows, Previous/This week/Next navigation, and a matching text list for accessibility.
+- **Timeline (Gantt chart).** Every task is drawn as a bar from its start date to its due date, grouped by class and subteam. The chart scrolls sideways through the whole schedule, opens at today, and has a matching text list for accessibility. (The live site still pages through 4/6/8/12-week windows until this change is deployed.)
 - **Shared projects.** A project belongs to one class and can include work from several of its subteams.
 - **Subteam rosters.** Leaders see each member's assigned work, including members with no work or zero hours.
 - **CSV downloads.** Filtered task, timeline, member-hour and project-hour reports for use in a spreadsheet.
@@ -72,7 +72,7 @@ The website checks these rules on the server as well as hiding buttons, so typin
 2. **Members:** select **My Tasks** to see your work. Open a task to read its instructions, change its status, or log the hours you worked.
 3. **Officers and the Chief Engineer:**
    - Select **Tasks** to see the board. Use the filters, then **New Task** to create work and pick assignees.
-   - Select **Timeline** to see the schedule. Choose a date window and use **Previous**, **This week** or **Next** to navigate.
+   - Select **Timeline** to see the schedule. Scroll sideways for earlier or later dates, or select **Jump to today**.
    - Select **Teams** to manage classes, subteams, projects and subteam rosters.
    - On **Tasks**, apply filters and select **Download CSV**, **Download member hours** or **Download project hours** for a spreadsheet.
 4. **Chief Engineer:** select **People** to add, change or remove people. See the [administrator guide](docs/ADMIN_GUIDE.md) for semester handover.
@@ -255,5 +255,5 @@ The observed plans are Heroku Eco and Postgres Essential-0. Record current charg
 
 ### AI Use
 
-- Claude (Anthropic) assisted with parts of the Sprint 3 code (the searchable assignee picker and the scrolling timeline), with code review, and with writing this README. The team reviewed all of it, and the automated tests and CI checks were run on the results.
+- Claude (Anthropic) assisted with parts of the Sprint 3 code (the scrolling timeline), with code review, and with writing this README. The team reviewed all of it, and the automated tests and CI checks were run on the results.
 - OpenAI Codex assisted with the approved Sprint 3 implementation, regression fixes, deployment diagnostics and review preparation. CI results and live observations are recorded separately from customer acceptance.

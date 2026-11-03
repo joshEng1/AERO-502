@@ -56,6 +56,6 @@ The guide is embedded under Help for Chief Engineers. Guide-link/session deliver
 
 ## Review and acceptance
 
-Normal review flow is feature → dev → test → main. Review the new PRs in order and require green CI. The current `dev` also contains an alternative continuous-scroll timeline implementation; reconciliation uses the deployed fixed-window timeline, so Joshua must assess that difference explicitly against the approved acceptance criteria. Customer UAT, full role checks, accessibility acceptance, ownership transfer and handover remain outstanding.
+Normal review flow is feature → dev → test → main. Review the new PRs in order and require green CI. Reconciliation used the deployed fixed-window timeline. KAN-23 AC 8 and the UAT form require horizontal scrolling through earlier and later dates, so the continuous-scroll timeline is restored in a follow-up PR on top of the reconciliation. Customer UAT, full role checks, accessibility acceptance, ownership transfer and handover remain outstanding.
 
 Notebook and UAT remain the approved sources. Appendix B requires initial status history; the earlier empty-history case does not apply to migrated tasks. Members see their own hours; aggregate acceptance checks require an authorized leader. No Notebook/UAT results were edited by preparing these PRs.
