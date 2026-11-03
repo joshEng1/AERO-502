@@ -1,58 +1,61 @@
 # Sprint 3 operational handover record
 
-Approved baseline: Notebook v3, Revision 6, and User Acceptance Test Form v3.
-Complete this record from observed results and copy the required evidence to Notebook Section 4.2. Blank fields are **not verified**, not passing results. Preserve the approved source documents.
+Evidence recorded on 2026-11-03 UTC (November 2 in Texas). Sources are Sonny's supplied Heroku command output, the source/destination recovery manifests, public CI runs, public health checks, and his confirmation that Google sign-in works after correcting the callback. This is operational evidence, not customer UAT approval.
 
-| Item | Confirmed value / evidence |
+| Item | Observed result |
 | --- | --- |
-| Production app, URL and organization owner | Not yet supplied |
-| Separate practice app and database identifier | Not yet supplied |
-| Reviewed commit and deployed release | Not deployed by this implementation session |
-| Hosting/database plans, recurring cost and capture date | Not verified against the account |
-| Google client owner, audience and callback addresses | Not verified on Heroku |
-| Approved Google sign-ins: chief, officer, member | Live verification pending |
-| Unapproved account denied; revoked session blocked | Live verification pending |
-| Designated website owner and support contact method | Confirm with the organization |
+| Live app | `aero-task-hub`, formerly `sleepy-depths-47724` |
+| Website | https://aero-task-hub-b5f4953964ed.herokuapp.com/ |
+| Hosting owner | Joshua's account; transfer to JD pending |
+| Release / code | `v23` / `2e4df57e136076beccb2eeb534b07183500aa280` |
+| Database | `postgresql-convex-72612`, Essential-0; reported PostgreSQL 18.4 |
+| Fallback | `sleepy-bayou-60650` / `postgresql-concentric-25807`; paused, not confirmed deleted |
+| Live checks | `/up` and `/login` returned HTTP 200; Sonny confirmed Google sign-in works |
+| Other roles / rejected accounts | Source-app denied/revoked checks were reported earlier; repeat all roles and denied/revoked checks on the final app |
+| Account privileges | Source promotion of Joshua to Chief Engineer succeeded before capture; Sonny retained Chief Engineer access; manifests matched after transfer |
+| OAuth / session settings | Google settings matched source; fresh session secret confirmed; destination database URL unchanged; secret values excluded from this record |
 
-## KAN-42: backup and isolated recovery
+## CI evidence
 
-| Evidence | Result |
-| --- | --- |
-| Backup method, frequency and schedule | Pending account review |
-| Retention and storage location | Pending account review |
-| Authorized responsible people | Pending confirmation |
-| Backup ID, creation time, finish time and successful status | Not executed |
-| Restore target proves a different database from production | Not provisioned or verified |
-| Matching source and restored manifests | Not executed |
-| Representative users, memberships, projects, tasks, periods, time entries, status history and prerequisites | Not executed |
-| Restore date, operator, duration and outcome | Not executed |
-| Remaining issues and follow-up owner | Record after exercise |
+- Core baseline `851d550`: [CI run 41495199847](https://github.com/joshEng1/AERO-502/actions/runs/41495199847), test/lint/Ruby scan/JS scan all successful.
+- Deployed `2e4df57`: [CI run 41546389517](https://github.com/joshEng1/AERO-502/actions/runs/41546389517), all four jobs successful.
+- These results belong to the named commits. Newly prepared review and promotion commits require their own green CI and Joshua's review.
 
-Use the administrator guide. Compare a frozen source/capture-time snapshot with the restored copy; a later live database can legitimately differ. Never overwrite production for this exercise. A code rollback does not restore records.
+## Transfer and recovery evidence (KAN-42)
 
-## KAN-40: administrator practice
+The source was frozen before capture. Source backup `sleepy-bayou-60650::b003` completed at **2026-11-03 00:55:31 UTC**, started at 00:55:30, backup size 57.26 KB. The destination's fresh rollback backup was `aero-task-hub::b003`. Both were downloaded before the approved transfer replaced the destination database.
 
-| Evidence | Result |
-| --- | --- |
-| Guide link and session arrangements sent to JD | Not sent by this implementation session |
-| Date, trainer and attendees | Pending |
-| Hosting access, release identification, updates and ownership transfer | Pending observed practice |
-| Backup and recovery completed by JD in the practice environment | Pending |
-| Unclear steps corrected and repeated successfully | Pending |
-| Follow-up actions, owners and actual completion evidence | Pending |
+After deployment, counts and SHA-256 values matched for all ten application tables in the source and destination `recovery:manifest` outputs:
 
-## KAN-41: offline restart instructions
+| Table | Rows |
+| --- | ---: |
+| teams | 6 |
+| subteams | 9 |
+| projects | 5 |
+| users | 9 |
+| memberships | 6 |
+| tasks | 10 |
+| task_assignments | 13 |
+| time_entries | 4 |
+| task_status_changes | 15 |
+| task_dependencies | 0 |
 
-| Evidence | Result |
-| --- | --- |
-| PDF location | `docs/RESTART_GUIDE.pdf`; downloadable from Help by the Chief Engineer |
-| Exact app, website and support contact filled in | Pending owner details |
-| Controlled restart result and approved-user sign-in | Not executed on Heroku |
-| Joshua's delivery to JD | Not sent by this implementation session |
-| JD confirms receipt and saves an offline copy | Pending actual confirmation |
+Both manifests reported **8.5 actual hours**. Do not compare these manifest hashes to hashes from the separate offline pg_dump comparison; their formats differ. The data contains approved sample reconstruction, not recovered evidence of unknown historical events.
 
-## Acceptance-source conflicts retained for review
+Local retained folder: `Downloads/AERO-502-final-transfer-20261103T011105839862Z/`, with `60650-sprint3-b003.dump`, `aero-task-hub-before-b003.dump` and `cutover-receipt.json`. The script receipt records a stop at configuration verification. A later read-only check confirmed the settings and release v22; manual deployment then produced v23 and the matching destination manifest. Do not present the stopped script receipt as automatic completion, and do not rerun its restore.
 
-- Appendix B requires every task to have an initial status-history row. The older AC-13.5 empty-history case cannot apply to a valid migrated task; check the creator and initial state instead.
-- Appendix B and AC-3.19 limit members to their own time entries. Aggregate checks in US-23 must be performed as an authorized leader; a member's task view does not expose other people's recorded entries.
-- These interpretations follow the notebook priority already specified. The approved notebook and UAT files have not been edited.
+**Still pending:** final-app post-verification backup; schedule and retention inspection; organization-owned backup storage; permanent responsible people; a timed isolated recovery exercise with compatible code and record/relationship validation. The production transfer above is not JD's training exercise. A code rollback does not restore records; a database restore can lose changes after the backup.
+
+## Administrator practice (KAN-40)
+
+The guide is embedded under Help for Chief Engineers. Guide-link/session delivery, JD's hosting/release/update/backup/recovery practice, feedback corrections, trainer/date/attendees and Notebook Section 4.2 evidence remain pending.
+
+## Offline restart instructions (KAN-41)
+
+`docs/RESTART_GUIDE.pdf` is available through Help. Its hosting/support fields still need to be filled and verified. A controlled restart, approved-user sign-in after restart, delivery to JD and confirmation of an offline saved copy remain pending. Do not mark the story complete from document generation alone.
+
+## Review and acceptance
+
+Normal review flow is feature → dev → test → main. Review the new PRs in order and require green CI. The current `dev` also contains an alternative continuous-scroll timeline implementation; reconciliation uses the deployed fixed-window timeline, so Joshua must assess that difference explicitly against the approved acceptance criteria. Customer UAT, full role checks, accessibility acceptance, ownership transfer and handover remain outstanding.
+
+Notebook and UAT remain the approved sources. Appendix B requires initial status history; the earlier empty-history case does not apply to migrated tasks. Members see their own hours; aggregate acceptance checks require an authorized leader. No Notebook/UAT results were edited by preparing these PRs.

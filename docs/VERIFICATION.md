@@ -1,5 +1,7 @@
 # Verification record
 
+For the subsequent successful CI runs, Heroku v23 transfer and user-confirmed Google sign-in, see [the operational handover record](SPRINT3_HANDOVER.md). The dated investigation entries below remain historical evidence; their pending items describe the state at that point.
+
 ## Sprint 3 approved design (November 2, 2026)
 
 Local implementation on `codex/sprint-3-approved-design`, based on `origin/dev` at `4b07387`. The approved Notebook v3 / Revision 6 and UAT v3 control this revision. See [story traceability and migration design](SPRINT3_STORIES_VERIFICATION.md). The Sprint 1/2 evidence below is preserved from `origin/main`; those historical results describe their stated commits.
