@@ -6,7 +6,7 @@ Keep a copy of this guide in an organization-owned location (for example the SAE
 
 ## Ownership and support
 
-Fill these in at each release and keep them up to date.
+Current app: **aero-task-hub**, website https://aero-task-hub-b5f4953964ed.herokuapp.com/, release **v23**, tested commit **2e4df57**. Heroku ownership was observed under Joshua's account; transfer to JD is still pending. See `docs/SPRINT3_HANDOVER.md` for dated evidence and remaining work. Verify these details at each release.
 
 | Item | Where to find it |
 | --- | --- |
@@ -24,7 +24,8 @@ Set these as Heroku Config Vars (Heroku dashboard → app → Settings → Revea
 | Name | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Database connection; Heroku Postgres sets it automatically. |
-| `RAILS_MASTER_KEY` | Unlocks the application's encrypted credentials. |
+| `SECRET_KEY_BASE` | Production session-signing secret; keep its value private. |
+| `RAILS_MASTER_KEY` | Required when encrypted credentials are used; absent in the observed deployment. |
 | `GOOGLE_CLIENT_ID` | Google sign-in client ID from the organization's Google Cloud project. |
 | `GOOGLE_CLIENT_SECRET` | Google sign-in client secret from the same project. |
 | `PASSWORD_SIGN_IN` | Set to `off` once everyone signs in with Google; leave unset to keep practice password sign-in. |
@@ -154,4 +155,5 @@ Official command reference: [Heroku PGBackups](https://devcenter.heroku.com/arti
 
 ## Handover evidence
 
-The operational record template is `docs/SPRINT3_HANDOVER.md`. Until the owner supplies app identifiers and the exercises are performed, hosting configuration, real Google OAuth, restart, backup completion, isolated restore, training and receipt remain **not verified**. Automated application tests do not substitute for these checks.
+Use `docs/SPRINT3_HANDOVER.md` for the recorded deployment, matching migration manifests and user-confirmed Google sign-in. Customer UAT, all-role live checks, backup scheduling/retention, controlled restart, administrator practice and PDF delivery remain incomplete until their actual results are recorded. Automated tests and deployment success do not establish those outcomes.
+
